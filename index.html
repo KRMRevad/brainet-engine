@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRAINET — O Cérebro Criativo</title>
+  <meta name="description"
+    content="BRAINET: Sistema vivo de produção de conteúdo com exploração automática de nichos e geração de canais infinitos.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🧠</text></svg>">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+  <div id="app">
+    <!-- Navigation -->
+    <nav id="nav" class="nav">
+      <div class="nav-brand" data-view="landing">
+        <span class="nav-emoji">🧠</span>
+        <span class="nav-title">BRAINET</span>
+      </div>
+      <div class="nav-links">
+        <button class="nav-link active" data-view="landing">
+          <span>🎲</span> Dice
+        </button>
+        <button class="nav-link" data-view="graph">
+          <span>🕸️</span> Graph
+        </button>
+        <button class="nav-link" data-view="stats">
+          <span>📊</span> Stats
+        </button>
+        <button class="nav-link" data-view="jobs">
+          <span>📋</span> Jobs
+        </button>
+      </div>
+      <div class="nav-stats" id="nav-stats"></div>
+    </nav>
+
+    <!-- Views Container -->
+    <main id="main-content">
+      <div id="view-landing" class="view active"></div>
+      <div id="view-graph" class="view"></div>
+      <div id="view-niche-detail" class="view"></div>
+      <div id="view-channel-spawner" class="view"></div>
+      <div id="view-pipeline" class="view"></div>
+      <div id="view-stats" class="view"></div>
+      <div id="view-jobs" class="view"></div>
+    </main>
+
+    <!-- Background particles -->
+    <canvas id="particles-canvas"></canvas>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
