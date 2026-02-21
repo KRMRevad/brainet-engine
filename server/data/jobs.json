@@ -1,5 +1,38 @@
 [
   {
+    "id": "job_1771614173655_n2zkd2",
+    "status": "running",
+    "createdAt": "2026-02-20T19:02:53.655Z",
+    "updatedAt": "2026-02-20T19:09:27.948Z",
+    "input": {
+      "nichoId": "temperanca",
+      "nichoNome": "Temperança e Nutrição",
+      "subtema": "equilibrio-alimentar",
+      "formato": "longform-video",
+      "angulo": "Açúcar: o vício mais aceito do mundo"
+    },
+    "currentAgent": 2,
+    "agents": {
+      "1": {
+        "status": "complete",
+        "startedAt": "2026-02-20T19:02:53.660Z",
+        "completedAt": "2026-02-20T19:09:27.926Z",
+        "outputLength": 2353
+      },
+      "2": {
+        "status": "running",
+        "startedAt": "2026-02-20T19:09:27.948Z",
+        "completedAt": null,
+        "outputLength": 0
+      }
+    },
+    "outputs": {
+      "1": "# 🧠 CONSELHO BRAINET — Output Combinado\n\n**Modo:** COUNCIL (3 IAs)\n**Data:** 2026-02-20T19:09:27.895Z\n\n## 📊 Ranking\n\n1. 🔵 **Gemini** — Score: 6.2 (1838 chars)\n2. 💚 **ChatGPT** — Score: 0 (0 chars)\n3. 🟠 **Claude** — Score: 0 (0 chars)\n\n---\n\n## 🔵 Resposta 1: Gemini (Score: 6.2)\n\nEsta análise foi construída seguindo o protocolo BRAINET V2.0, focando na desconstrução científica, cultural e comportamental do açúcar. O objetivo é fornecer o substrato intelectual para um vídeo de 12+ minutos que não seja apenas \"mais um vídeo de dieta\", mas um dossiê sobre a dependência neuroquímica e industrial.\n\n🏛️ CANON: Açúcar — O Vício Mais Aceito do Mundo\n🗺️ MAPA DO TERRITÓRIO (Etapa 2)\nPILAR 1 - MATERIAIS OURO (Densidade)\n\nRepositórios: PubMed, Nature (Nutrition), WHO (World Health Organization).\n\nBases: The Lancet Oncology, American Journal of Clinical Nutrition.\n\nObras Fundamentais: Gary Taubes, Robert Lustig, Yudkin.\n\nPILAR 2 - FONTES VIVAS (Fluxo)\n\nYouTube: Dr. Robert Lustig (UCSF), Dr. Eric Berg, NutritionFacts.org (Dr. Michael Greger).\n\nNewsletters: Examine.com, Precision Nutrition.\n\nPerfis: @drjasonfung (X), @glucosegoddess (Instagram).\n\nPILAR 3 - CULTURA POPULAR (Memética)\n\nComunidades: r/sugarfree, r/keto (Reddit).\n\nFenômenos: \"Sugar Rush\", \"Coma por estresse\", \"Recompensa de sexta-feira\".\n\nSaberes: A \"falta de açúcar\" como desculpa para mau humor (hangry).\n\nPILAR 4 - POLÊMICAS (Tensões)\n\nDebates: Adoçantes artificiais vs. Açúcar; Frutose da fruta vs. HFCS.\n\nConflitos: A indústria paga estudos? (The Sugar Association vs. Pesquisadores).\n\n🛡️ TRIAGEM FINALISTAS (Etapa 3 & 4)\nPilar\tItem\tNota (0-5)\tPor que?\nOuro\tPure, White and Deadly (John Yudkin)\t5.0\tA profecia esquecida de 1972 sobre o açúcar.\nOuro\tFat Chance (Robert Lustig)\t4.9\tExplicação neuroquímica da resistência à leptina.\nViva\tGlucose Goddess (Jessie Inchauspé)\t4.7\tTradução de picos glicêmicos para o povão.\nPopular\tO mito do \"Cérebro precisa de açúcar\"\t4.5\tCrença popular que confunde glicose com sacarose.\nPolêmica\tAdoçantes causam resistência à insulina?\t4.8\tO debate quente de 2024-2026 sobre a resposta cefálica.\nExport to Sheets\n\n---\n\n## 💚 Resposta 2: ChatGPT (Score: 0)\n\n\n\n---\n\n## 🟠 Resposta 3: Claude (Score: 0)\n\n\n\n---\n\n## 🔄 Pontos Únicos por IA\n\n**🔵 Gemini** trouxe: açúcar, pilar, sobre, nutrition, robert, lustig, popular, vídeo, neuroquímica, etapa\n"
+    },
+    "errors": [],
+    "duration": null
+  },
+  {
     "id": "job_1771608326683_sdrub9",
     "status": "running",
     "createdAt": "2026-02-20T17:25:26.683Z",

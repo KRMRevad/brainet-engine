@@ -18,6 +18,23 @@ const AI_DRIVERS = {
         emoji: '💚',
         url: 'https://chatgpt.com',
         newChatUrl: 'https://chatgpt.com/',
+        async toggleProMode(page, options) {
+            // Options would eventually dictate if Pro is on/off, defaulting to on for Search/Matrix agents
+            try {
+                // Look for Search/Deep Research button (usually toggleable)
+                const searchBtn = await page.$('button[aria-label="Search"], button[aria-label="Web Search"], button[aria-label="Deep Research"]')
+                if (searchBtn) {
+                    const isPressed = await page.evaluate(el => el.getAttribute('aria-pressed') === 'true', searchBtn)
+                    if (!isPressed) {
+                        await searchBtn.click()
+                        await new Promise(r => setTimeout(r, 500))
+                        console.log('[BrowserLLM] ChatGPT Pro Mode (Search) enabled')
+                    }
+                }
+            } catch (e) {
+                console.log('[BrowserLLM] Could not toggle ChatGPT Pro mode:', e.message)
+            }
+        },
         async countResponses(page) {
             return await page.evaluate(() => document.querySelectorAll('[data-message-author-role="assistant"]').length)
         },
@@ -337,6 +354,9 @@ async function getAITab(aiId) {
     return page
 }
 
+// Global lock to serialize browser UI interactions across parallel requests
+let browserLock = Promise.resolve()
+
 /**
  * Send a prompt to a specific AI and get the response
  * @param {string} aiId - 'chatgpt' | 'claude' | 'gemini'
@@ -349,29 +369,49 @@ export async function sendToAI(aiId, prompt, options = {}, onProgress = null) {
     const driver = AI_DRIVERS[aiId]
     if (!driver) throw new Error(`Unknown AI: ${aiId}`)
 
-    const page = await getAITab(aiId)
+    // Acquire lock for browser interaction (typing and sending)
+    let releaseLock
+    const lockPromise = new Promise(resolve => { releaseLock = resolve })
+    const currentLock = browserLock
+    browserLock = browserLock.then(() => lockPromise)
 
-    // Navigate to new chat
-    if (onProgress) onProgress({ type: 'ai_navigating', ai: aiId, name: driver.name })
-    await page.goto(driver.newChatUrl, { waitUntil: 'networkidle2', timeout: 30000 })
-    await sleep(2000)
+    await currentLock // wait for our turn to use the browser UI
 
-    // Count initial responses before sending
-    const initialCount = await driver.countResponses(page)
+    let page, initialCount
+    try {
+        page = await getAITab(aiId)
 
-    // Enable Pro Features (Search / Reasoning)
-    if (driver.toggleProMode) {
-        if (onProgress) onProgress({ type: 'ai_toggling_pro', ai: aiId, name: driver.name })
-        await driver.toggleProMode(page, options)
+        // Navigate to new chat
+        if (onProgress) onProgress({ type: 'ai_navigating', ai: aiId, name: driver.name })
+        await page.goto(driver.newChatUrl, { waitUntil: 'networkidle2', timeout: 30000 })
+        await sleep(2000)
+
+        // Count initial responses before sending
+        initialCount = await driver.countResponses(page)
+
+        // Enable Pro Features (Search / Reasoning)
+        if (driver.toggleProMode) {
+            if (onProgress) onProgress({ type: 'ai_toggling_pro', ai: aiId, name: driver.name })
+            await driver.toggleProMode(page, options)
+        }
+
+        // Type the prompt
+        if (onProgress) onProgress({ type: 'ai_typing', ai: aiId, name: driver.name })
+        await driver.typePrompt(page, prompt)
+
+        // Send the message
+        if (onProgress) onProgress({ type: 'ai_sending', ai: aiId, name: driver.name })
+        await driver.sendMessage(page)
+
+        // Wait a tiny bit just to let UI register click before releasing lock
+        await sleep(1000)
+    } finally {
+        // Release lock so other parallel AIs can type in their tabs
+        releaseLock()
     }
 
-    // Type the prompt
-    if (onProgress) onProgress({ type: 'ai_typing', ai: aiId, name: driver.name })
-    await driver.typePrompt(page, prompt)
-
-    // Send the message
-    if (onProgress) onProgress({ type: 'ai_sending', ai: aiId, name: driver.name })
-    await driver.sendMessage(page)
+    // --- PARALLEL WAITING PHASE ---
+    // The browser runs these streams concurrently in background tabs!
 
     // Wait for complete response
     if (onProgress) onProgress({ type: 'ai_thinking', ai: aiId, name: driver.name, emoji: driver.emoji })
