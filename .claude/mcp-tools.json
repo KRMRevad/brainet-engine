@@ -1,0 +1,162 @@
+{
+  "name": "aios-agents",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "/aios-master",
+      "description": "Activate the AIOS Master Orchestrator agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute (*help, *task, *workflow, etc)"
+          }
+        }
+      }
+    },
+    {
+      "name": "/dev",
+      "description": "Activate the Developer agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/architect",
+      "description": "Activate the Architect agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/qa",
+      "description": "Activate the Quality Assurance agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/pm",
+      "description": "Activate the Project Manager agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/po",
+      "description": "Activate the Product Owner agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/sm",
+      "description": "Activate the Scrum Master agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/analyst",
+      "description": "Activate the Business Analyst agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/devops",
+      "description": "Activate the DevOps Engineer agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/data-engineer",
+      "description": "Activate the Data Engineer agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/ux-design-expert",
+      "description": "Activate the UX Design Expert agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    },
+    {
+      "name": "/squad-creator",
+      "description": "Activate the Squad Creator agent",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Agent command to execute"
+          }
+        }
+      }
+    }
+  ]
+}

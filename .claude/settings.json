@@ -1,0 +1,80 @@
+{
+  "version": "3.0.0",
+  "workspace": {
+    "name": "BRAINET Engine",
+    "description": "AI-Orchestrated Development Engine (Synkra AIOS Framework)"
+  },
+  "slashCommands": {
+    "enabled": true,
+    "registry": ".claude/slash-commands.json",
+    "workflowPath": ".agent/workflows",
+    "autoDiscovery": true,
+    "agents": [
+      {
+        "id": "aios-master",
+        "command": "/aios-master",
+        "workflowFile": ".agent/workflows/aios-master.md"
+      },
+      {
+        "id": "dev",
+        "command": "/dev",
+        "workflowFile": ".agent/workflows/dev.md"
+      },
+      {
+        "id": "architect",
+        "command": "/architect",
+        "workflowFile": ".agent/workflows/architect.md"
+      },
+      {
+        "id": "qa",
+        "command": "/qa",
+        "workflowFile": ".agent/workflows/qa.md"
+      },
+      {
+        "id": "pm",
+        "command": "/pm",
+        "workflowFile": ".agent/workflows/pm.md"
+      },
+      {
+        "id": "po",
+        "command": "/po",
+        "workflowFile": ".agent/workflows/po.md"
+      },
+      {
+        "id": "sm",
+        "command": "/sm",
+        "workflowFile": ".agent/workflows/sm.md"
+      },
+      {
+        "id": "analyst",
+        "command": "/analyst",
+        "workflowFile": ".agent/workflows/analyst.md"
+      },
+      {
+        "id": "devops",
+        "command": "/devops",
+        "workflowFile": ".agent/workflows/devops.md"
+      },
+      {
+        "id": "data-engineer",
+        "command": "/data-engineer",
+        "workflowFile": ".agent/workflows/data-engineer.md"
+      },
+      {
+        "id": "ux-design-expert",
+        "command": "/ux-design-expert",
+        "workflowFile": ".agent/workflows/ux-design-expert.md"
+      },
+      {
+        "id": "squad-creator",
+        "command": "/squad-creator",
+        "workflowFile": ".agent/workflows/squad-creator.md"
+      }
+    ]
+  },
+  "framework": {
+    "type": "synkra-aios",
+    "version": "3.0.0",
+    "constitution": ".aios-core/constitution.md"
+  }
+}
