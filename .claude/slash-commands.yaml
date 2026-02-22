@@ -1,0 +1,139 @@
+# BRAINET AIOS Slash Commands Configuration
+# Claude Code native format - DEFINITIVE SOLUTION
+# Last updated: 2026-02-21
+
+version: "1.0"
+project: "brainet-mvp"
+framework: "synkra-aios"
+
+slashCommands:
+  - id: aios-master
+    command: /aios-master
+    aliases: ["@aios-master"]
+    title: "AIOS Master Orchestrator"
+    description: "Central coordination of all agents and workflows"
+    path: ".agent/workflows/aios-master.md"
+    role: "Master Orchestrator"
+    category: "core"
+    enabled: true
+
+  - id: dev
+    command: /dev
+    aliases: ["@dev"]
+    title: "Developer Agent"
+    description: "Code implementation, debugging, and development tasks"
+    path: ".agent/workflows/dev.md"
+    role: "Developer"
+    category: "technical"
+    enabled: true
+
+  - id: architect
+    command: /architect
+    aliases: ["@architect"]
+    title: "Architect Agent"
+    description: "System design, architecture decisions, and technical strategy"
+    path: ".agent/workflows/architect.md"
+    role: "Architect"
+    category: "technical"
+    authority: ["architecture-decisions"]
+    enabled: true
+
+  - id: qa
+    command: /qa
+    aliases: ["@qa"]
+    title: "Quality Assurance Agent"
+    description: "Testing, quality verification, and quality verdicts"
+    path: ".agent/workflows/qa.md"
+    role: "Quality Assurance"
+    category: "quality"
+    authority: ["quality-verdicts"]
+    enabled: true
+
+  - id: pm
+    command: /pm
+    aliases: ["@pm"]
+    title: "Project Manager Agent"
+    description: "Project planning, coordination, and status tracking"
+    path: ".agent/workflows/pm.md"
+    role: "Project Manager"
+    category: "management"
+    enabled: true
+
+  - id: po
+    command: /po
+    aliases: ["@po"]
+    title: "Product Owner Agent"
+    description: "Product vision, requirements, and story creation"
+    path: ".agent/workflows/po.md"
+    role: "Product Owner"
+    category: "management"
+    authority: ["story-creation"]
+    enabled: true
+
+  - id: sm
+    command: /sm
+    aliases: ["@sm"]
+    title: "Scrum Master Agent"
+    description: "Process facilitation, team coordination, and story management"
+    path: ".agent/workflows/sm.md"
+    role: "Scrum Master"
+    category: "management"
+    authority: ["story-creation"]
+    enabled: true
+
+  - id: analyst
+    command: /analyst
+    aliases: ["@analyst"]
+    title: "Business Analyst Agent"
+    description: "Business analysis, requirements gathering, and impact assessment"
+    path: ".agent/workflows/analyst.md"
+    role: "Business Analyst"
+    category: "analysis"
+    enabled: true
+
+  - id: devops
+    command: /devops
+    aliases: ["@devops"]
+    title: "DevOps Engineer Agent"
+    description: "Deployment, infrastructure, and release management"
+    path: ".agent/workflows/devops.md"
+    role: "DevOps Engineer"
+    category: "infrastructure"
+    authority: ["git-push", "pull-requests", "releases"]
+    enabled: true
+
+  - id: data-engineer
+    command: /data-engineer
+    aliases: ["@data-engineer"]
+    title: "Data Engineer Agent"
+    description: "Data pipelines, database design, and data infrastructure"
+    path: ".agent/workflows/data-engineer.md"
+    role: "Data Engineer"
+    category: "data"
+    enabled: true
+
+  - id: ux-design-expert
+    command: /ux-design-expert
+    aliases: ["@ux-design-expert"]
+    title: "UX Design Expert Agent"
+    description: "User experience, interface design, and usability"
+    path: ".agent/workflows/ux-design-expert.md"
+    role: "UX Design Expert"
+    category: "design"
+    enabled: true
+
+  - id: squad-creator
+    command: /squad-creator
+    aliases: ["@squad-creator"]
+    title: "Squad Creator Agent"
+    description: "Team organization, squad composition, and cross-functional coordination"
+    path: ".agent/workflows/squad-creator.md"
+    role: "Squad Creator"
+    category: "management"
+    enabled: true
+
+settings:
+  autoDiscovery: true
+  workflowPath: ".agent/workflows"
+  validateOnStartup: true
+  logLevel: "info"

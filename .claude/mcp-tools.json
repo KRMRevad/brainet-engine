@@ -3,159 +3,195 @@
   "version": "1.0.0",
   "tools": [
     {
-      "name": "/aios-master",
+      "name": "aios_master",
       "description": "Activate the AIOS Master Orchestrator agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute (*help, *task, *workflow, etc)"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/dev",
+      "name": "dev_agent",
       "description": "Activate the Developer agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/architect",
+      "name": "architect_agent",
       "description": "Activate the Architect agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/qa",
+      "name": "qa_agent",
       "description": "Activate the Quality Assurance agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/pm",
+      "name": "pm_agent",
       "description": "Activate the Project Manager agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/po",
+      "name": "po_agent",
       "description": "Activate the Product Owner agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/sm",
+      "name": "sm_agent",
       "description": "Activate the Scrum Master agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/analyst",
+      "name": "analyst_agent",
       "description": "Activate the Business Analyst agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/devops",
+      "name": "devops_agent",
       "description": "Activate the DevOps Engineer agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/data-engineer",
+      "name": "data_engineer_agent",
       "description": "Activate the Data Engineer agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/ux-design-expert",
+      "name": "ux_design_expert_agent",
       "description": "Activate the UX Design Expert agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     },
     {
-      "name": "/squad-creator",
+      "name": "squad_creator_agent",
       "description": "Activate the Squad Creator agent",
-      "schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "command": {
             "type": "string",
             "description": "Agent command to execute"
           }
-        }
+        },
+        "required": [
+          "command"
+        ]
       }
     }
   ]

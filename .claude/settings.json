@@ -4,74 +4,92 @@
     "name": "BRAINET Engine",
     "description": "AI-Orchestrated Development Engine (Synkra AIOS Framework)"
   },
-  "slashCommands": {
-    "enabled": true,
-    "registry": ".claude/slash-commands.json",
-    "workflowPath": ".agent/workflows",
-    "autoDiscovery": true,
-    "agents": [
-      {
-        "id": "aios-master",
-        "command": "/aios-master",
-        "workflowFile": ".agent/workflows/aios-master.md"
-      },
-      {
-        "id": "dev",
-        "command": "/dev",
-        "workflowFile": ".agent/workflows/dev.md"
-      },
-      {
-        "id": "architect",
-        "command": "/architect",
-        "workflowFile": ".agent/workflows/architect.md"
-      },
-      {
-        "id": "qa",
-        "command": "/qa",
-        "workflowFile": ".agent/workflows/qa.md"
-      },
-      {
-        "id": "pm",
-        "command": "/pm",
-        "workflowFile": ".agent/workflows/pm.md"
-      },
-      {
-        "id": "po",
-        "command": "/po",
-        "workflowFile": ".agent/workflows/po.md"
-      },
-      {
-        "id": "sm",
-        "command": "/sm",
-        "workflowFile": ".agent/workflows/sm.md"
-      },
-      {
-        "id": "analyst",
-        "command": "/analyst",
-        "workflowFile": ".agent/workflows/analyst.md"
-      },
-      {
-        "id": "devops",
-        "command": "/devops",
-        "workflowFile": ".agent/workflows/devops.md"
-      },
-      {
-        "id": "data-engineer",
-        "command": "/data-engineer",
-        "workflowFile": ".agent/workflows/data-engineer.md"
-      },
-      {
-        "id": "ux-design-expert",
-        "command": "/ux-design-expert",
-        "workflowFile": ".agent/workflows/ux-design-expert.md"
-      },
-      {
-        "id": "squad-creator",
-        "command": "/squad-creator",
-        "workflowFile": ".agent/workflows/squad-creator.md"
-      }
-    ]
-  },
+  "slashCommands": [
+    {
+      "id": "aios-master",
+      "command": "/aios-master",
+      "name": "AIOS Master",
+      "description": "Master orchestrator for all agents and workflows",
+      "workflowFile": ".agent/workflows/aios-master.md"
+    },
+    {
+      "id": "dev",
+      "command": "/dev",
+      "name": "Developer",
+      "description": "Code implementation, debugging, and development",
+      "workflowFile": ".agent/workflows/dev.md"
+    },
+    {
+      "id": "architect",
+      "command": "/architect",
+      "name": "Architect",
+      "description": "System design and architecture decisions",
+      "workflowFile": ".agent/workflows/architect.md"
+    },
+    {
+      "id": "qa",
+      "command": "/qa",
+      "name": "Quality Assurance",
+      "description": "Testing, quality verification, and quality verdicts",
+      "workflowFile": ".agent/workflows/qa.md"
+    },
+    {
+      "id": "pm",
+      "command": "/pm",
+      "name": "Project Manager",
+      "description": "Project planning and coordination",
+      "workflowFile": ".agent/workflows/pm.md"
+    },
+    {
+      "id": "po",
+      "command": "/po",
+      "name": "Product Owner",
+      "description": "Product vision and requirements",
+      "workflowFile": ".agent/workflows/po.md"
+    },
+    {
+      "id": "sm",
+      "command": "/sm",
+      "name": "Scrum Master",
+      "description": "Process facilitation and team coordination",
+      "workflowFile": ".agent/workflows/sm.md"
+    },
+    {
+      "id": "analyst",
+      "command": "/analyst",
+      "name": "Business Analyst",
+      "description": "Business analysis and impact assessment",
+      "workflowFile": ".agent/workflows/analyst.md"
+    },
+    {
+      "id": "devops",
+      "command": "/devops",
+      "name": "DevOps Engineer",
+      "description": "Deployment, infrastructure, and releases",
+      "workflowFile": ".agent/workflows/devops.md"
+    },
+    {
+      "id": "data-engineer",
+      "command": "/data-engineer",
+      "name": "Data Engineer",
+      "description": "Data pipelines and infrastructure",
+      "workflowFile": ".agent/workflows/data-engineer.md"
+    },
+    {
+      "id": "ux-design-expert",
+      "command": "/ux-design-expert",
+      "name": "UX Design Expert",
+      "description": "User experience and interface design",
+      "workflowFile": ".agent/workflows/ux-design-expert.md"
+    },
+    {
+      "id": "squad-creator",
+      "command": "/squad-creator",
+      "name": "Squad Creator",
+      "description": "Team organization and composition",
+      "workflowFile": ".agent/workflows/squad-creator.md"
+    }
+  ],
   "framework": {
     "type": "synkra-aios",
     "version": "3.0.0",
