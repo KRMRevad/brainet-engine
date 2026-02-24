@@ -311,7 +311,8 @@ export async function connectToChrome(port = 9222) {
         throw new Error(
             `Cannot connect to Chrome on port ${port}. Start Chrome with:\n` +
             `  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=${port}\n` +
-            `Error: ${e.message}`
+            `Error: ${e.message}`,
+            { cause: e }
         )
     }
 }

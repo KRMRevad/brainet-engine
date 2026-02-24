@@ -7,19 +7,28 @@
     "dev": "vite --port 5173 --strictPort",
     "server": "node server/server.js",
     "start": "concurrently \"npm run dev\" \"npm run server\"",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "start:pm2:dev": "pm2 start ecosystem.config.js --env development",
+    "stop:pm2": "pm2 stop brainet-server",
+    "restart:pm2": "pm2 restart brainet-server",
+    "logs:pm2": "pm2 logs brainet-server",
     "chrome": "open -n -a 'Google Chrome' --args --remote-debugging-port=9225 --user-data-dir=\"$HOME/.brainet-chrome\"",
+    "lint": "eslint src/ server/",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^6.0.0",
-    "concurrently": "^9.0.0"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.0.0",
+    "eslint": "^10.0.2",
+    "vite": "^6.0.0"
   },
   "dependencies": {
-    "vis-network": "^9.1.9",
-    "vis-data": "^7.1.9",
-    "express": "^4.21.0",
+    "@supabase/supabase-js": "^2.97.0",
     "cors": "^2.8.5",
-    "puppeteer-core": "^24.0.0"
+    "express": "^4.21.0",
+    "puppeteer-core": "^24.0.0",
+    "vis-data": "^7.1.9",
+    "vis-network": "^9.1.9"
   }
 }

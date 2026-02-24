@@ -38,7 +38,10 @@ const PIPELINE_AGENTS = [
     { id: 1, nome: 'Pesquisa Profunda', emoji: '🔍', heavy: true, hasSearch: true },
     { id: 2, nome: 'Extração de Conhecimento', emoji: '⛏️', heavy: true },
     { id: 3, nome: 'Matrix Mente Superior', emoji: '🧠', heavy: true },
-    // Agent 4 (Insights) can be skipped in MVP for speed
+    // DECISÃO ARQUITETURAL (DEA-01 — 2026-02-24):
+    // O Agente 4 foi intencionalmente omitido do pipeline MVP.
+    // Pipeline canônico: 1 → 2 → 3 → 5 → 6 (5 agentes)
+    // Revisitar em pós-MVP se necessário expandir capacidade de análise.
     { id: 5, nome: 'Estratégia Multicanal', emoji: '📡', heavy: false },
     { id: 6, nome: 'Roteirista Estratégico', emoji: '🎬', heavy: true },
 ]
@@ -115,10 +118,10 @@ export async function executePipeline(job, nicho) {
             outputs[agent.id] = output
             context.previousOutputs = outputs
 
-            // Step 6: Save to workspace
-            await saveAgentOutput(job, agent, output, context, councilResult)
+            // Step 6: Save to database (via updateAgentStatus with output param)
+            // Note: workspace saving removed in TD-1.2 (AC-8) - all outputs now in Supabase
 
-            // Step 7: Update status
+            // Step 7: Update status and save output to job_outputs table
             await updateAgentStatus(job.id, agent.id, 'complete', output)
             emitProgress(job.id, {
                 type: 'agent_complete',
@@ -169,40 +172,9 @@ export async function executePipeline(job, nicho) {
     return { outputs, duration }
 }
 
-/**
- * Save agent output to the workspace
- */
-async function saveAgentOutput(job, agent, output, context, councilResult = {}) {
-    // Determine save path
-    const channelName = context.nicho.canalExistente || `321.${context.nicho.nome}`
-    const outputDir = path.join(config.workspace, config.jobs.outputDir, job.id)
-
-    await fs.mkdir(outputDir, { recursive: true })
-
-    // Save individual agent output
-    const filename = `agent_${agent.id}_${agent.nome.replace(/\s+/g, '_').toLowerCase()}.md`
-    const filePath = path.join(outputDir, filename)
-
-    const modeLabel = councilResult.mode || 'unknown'
-    const sourcesLabel = (councilResult.sources || []).join(' + ')
-
-    const header = `# ${agent.emoji} Agente ${agent.id}: ${agent.nome}
-
-**Job:** ${job.id}
-**Nicho:** ${context.nicho.emoji} ${context.nicho.nome}
-**Ângulo:** ${context.angulo}
-**Data:** ${new Date().toISOString()}
-**Canal alvo:** ${channelName}
-**Council Mode:** ${modeLabel.toUpperCase()}
-**Fontes:** ${sourcesLabel}
-${councilResult.analysis ? `**Análise:** ${councilResult.analysis}` : ''}
-
----
-
-`
-    await fs.writeFile(filePath, header + output, 'utf-8')
-    console.log(`[Agent ${agent.id}] Output saved to ${filePath} (${modeLabel})`)
-}
+// NOTE: saveAgentOutput() removed in TD-1.2 (AC-8)
+// Agent outputs are now saved directly to Supabase job_outputs table
+// via updateAgentStatus(jobId, agentId, 'complete', output)
 
 /**
  * Find formato in nicho

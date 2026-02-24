@@ -5,8 +5,8 @@
 
 import { runPipeline as runMockPipeline } from '../pipeline-runner.js'
 import { navigateTo } from '../main.js'
-
-const API_BASE = 'http://localhost:3001'
+import { API_BASE } from '../config.js'
+import { escapeHtml, renderObj } from '../utils.js'
 
 export function renderPipeline(container, data = {}) {
   if (!data.nicho || !data.angulo) {
@@ -29,15 +29,15 @@ export function renderPipeline(container, data = {}) {
       <div class="council-selector" id="council-selector">
         <span class="council-label">🧠 Modo do Conselho:</span>
         <div class="council-modes">
-          <button class="council-mode-btn active" data-mode="solo" title="1 IA responde">
+          <button class="council-mode-btn active" data-mode="solo" title="1 IA responde" aria-label="Modo Solo — uma IA responde">
             <span class="mode-icon">🎯</span>
             <span class="mode-name">SOLO</span>
           </button>
-          <button class="council-mode-btn" data-mode="council" title="3 IAs respondem & merge">
+          <button class="council-mode-btn" data-mode="council" title="3 IAs respondem & merge" aria-label="Modo Council — três IAs em paralelo">
             <span class="mode-icon">👥</span>
             <span class="mode-name">COUNCIL</span>
           </button>
-          <button class="council-mode-btn" data-mode="cascade" title="Cada IA refina a anterior">
+          <button class="council-mode-btn" data-mode="cascade" title="Cada IA refina a anterior" aria-label="Modo Cascade — três IAs em sequência">
             <span class="mode-icon">🔗</span>
             <span class="mode-name">CASCADE</span>
           </button>
@@ -380,30 +380,3 @@ function completeAgentStep(el, msg) {
   `
 }
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
-function renderObj(obj, depth = 0) {
-  let html = '<ul style="list-style:none;padding-left:' + (depth * 12) + 'px;">'
-  for (const [key, value] of Object.entries(obj)) {
-    if (Array.isArray(value)) {
-      html += `<li><strong style="color:var(--text-accent);">${fmtKey(key)}:</strong></li>`
-      value.forEach(item => {
-        html += typeof item === 'object' ? `<li>${renderObj(item, depth + 1)}</li>` : `<li style="padding-left:12px;">• ${item}</li>`
-      })
-    } else if (typeof value === 'object' && value !== null) {
-      html += `<li><strong style="color:var(--text-accent);">${fmtKey(key)}:</strong></li>${renderObj(value, depth + 1)}`
-    } else {
-      html += `<li><strong style="color:var(--text-accent);">${fmtKey(key)}:</strong> ${value}</li>`
-    }
-  }
-  return html + '</ul>'
-}
-
-function fmtKey(k) {
-  return k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()).trim()
-}

@@ -68,7 +68,12 @@ async function anthropicComplete(systemPrompt, userPrompt, model, maxTokens, tem
     const key = config.llm.anthropicKey
     if (!key) throw new Error('ANTHROPIC_API_KEY not set. Export it in your shell or .env file.')
 
-    const anthropicModel = model.startsWith('claude') ? model : 'claude-sonnet-4-20250514'
+    // AC-5: Explicit warning if model not configured as Claude
+    let anthropicModel = model
+    if (!model.startsWith('claude')) {
+        anthropicModel = 'claude-sonnet-4-20250514'
+        console.warn(`[LLM] Model configured "${model}" does not start with "claude" — using fallback: ${anthropicModel}`)
+    }
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',

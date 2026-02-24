@@ -67,16 +67,22 @@ export function renderLanding(container) {
 }
 
 function showResultOverlay(result) {
+    // Store reference to element that triggered the overlay for focus restore
+    const triggerElement = document.activeElement || document.querySelector('#dice-btn')
+
     const overlay = document.createElement('div')
     overlay.className = 'result-overlay'
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-labelledby', 'result-overlay-title')
     overlay.innerHTML = `
     <div class="result-card">
       <div class="color-bar" style="background: linear-gradient(90deg, ${result.nicho.cor}, ${result.nicho.corSecundaria})"></div>
-      
+
       <div class="result-header">
         <div class="result-emoji" style="border: 1px solid ${result.nicho.cor}30">${result.nicho.emoji}</div>
         <div class="result-meta">
-          <h2 style="color: ${result.nicho.cor}">${result.nicho.nome}</h2>
+          <h2 id="result-overlay-title" style="color: ${result.nicho.cor}">${result.nicho.nome}</h2>
           <p>${result.nicho.arquetipo} · ${result.nicho.virtudePromovida}</p>
         </div>
       </div>
@@ -115,33 +121,82 @@ function showResultOverlay(result) {
 
     document.body.appendChild(overlay)
 
-    // Close
-    overlay.querySelector('#result-close').addEventListener('click', () => {
-        overlay.remove()
-    })
+    // Focus trap: collect focusable elements
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const getFocusableElements = () => overlay.querySelectorAll(focusableSelector)
 
+    // Focus first button on open
+    setTimeout(() => {
+        const firstFocusable = getFocusableElements()[0]
+        if (firstFocusable) firstFocusable.focus()
+    }, 50)
+
+    // Focus trap: prevent Tab from leaving dialog
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            closeOverlay()
+            return
+        }
+
+        if (e.key !== 'Tab') return
+
+        const focusableElements = getFocusableElements()
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+        const activeElement = document.activeElement
+
+        if (e.shiftKey) {
+            // Shift+Tab on first element → focus last
+            if (activeElement === firstElement) {
+                e.preventDefault()
+                lastElement.focus()
+            }
+        } else {
+            // Tab on last element → focus first
+            if (activeElement === lastElement) {
+                e.preventDefault()
+                firstElement.focus()
+            }
+        }
+    }
+
+    const closeOverlay = () => {
+        overlay.removeEventListener('keydown', handleKeyDown)
+        overlay.remove()
+        // Restore focus to trigger element
+        if (triggerElement && triggerElement.focus) {
+            triggerElement.focus()
+        }
+    }
+
+    overlay.addEventListener('keydown', handleKeyDown)
+
+    // Close button
+    overlay.querySelector('#result-close').addEventListener('click', closeOverlay)
+
+    // Close on backdrop click
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove()
+        if (e.target === overlay) closeOverlay()
     })
 
     // Actions
     overlay.querySelector('#result-explore').addEventListener('click', () => {
-        overlay.remove()
+        closeOverlay()
         navigateTo('niche-detail', { nicho: result.nicho })
     })
 
     overlay.querySelector('#result-pipeline').addEventListener('click', () => {
-        overlay.remove()
+        closeOverlay()
         navigateTo('pipeline', result)
     })
 
     overlay.querySelector('#result-spawn').addEventListener('click', () => {
-        overlay.remove()
+        closeOverlay()
         navigateTo('channel-spawner', { nicho: result.nicho })
     })
 
     overlay.querySelector('#result-reroll').addEventListener('click', () => {
-        overlay.remove()
+        closeOverlay()
         const newResult = feelingLucky()
         updateNavStats()
         showResultOverlay(newResult)

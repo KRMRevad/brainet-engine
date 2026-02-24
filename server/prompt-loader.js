@@ -9,16 +9,27 @@ import path from 'path'
 import config from './config.js'
 
 const promptCache = new Map()
+const PROMPT_CACHE_TTL_MS = (parseInt(process.env.PROMPT_CACHE_TTL_SECONDS || '300') * 1000)
 
 /**
- * Load an agent's prompt from the workspace .md file
+ * Load an agent's prompt from the workspace or local prompts directory
+ * AC-4: Cache with configurable TTL via PROMPT_CACHE_TTL_SECONDS
+ *
  * @param {number|string} agentId - Agent number or key
  * @returns {string} Cleaned system prompt
  */
 export async function loadAgentPrompt(agentId) {
-    // Check cache
+    // Check cache with TTL
     if (promptCache.has(agentId)) {
-        return promptCache.get(agentId)
+        const cached = promptCache.get(agentId)
+        const age = Date.now() - cached.cachedAt
+
+        if (age < PROMPT_CACHE_TTL_MS) {
+            // Cache is still fresh
+            return cached.content
+        }
+        // Cache expired, remove it
+        promptCache.delete(agentId)
     }
 
     const filename = config.agents.promptFiles[agentId]
@@ -26,16 +37,33 @@ export async function loadAgentPrompt(agentId) {
         throw new Error(`No prompt file configured for agent: ${agentId}`)
     }
 
-    const promptPath = path.join(config.workspace, config.agents.promptDir, filename)
+    // Try local prompts first (from server/prompts), then fall back to workspace
+    const isLocalPromptsPath = process.env.PROMPTS_PATH || false
+    let promptPath
+
+    if (isLocalPromptsPath) {
+        // Use PROMPTS_PATH from env (typically ./server/prompts)
+        const promptsDir = path.isAbsolute(config.agents.promptDir)
+            ? config.agents.promptDir
+            : path.resolve(process.cwd(), config.agents.promptDir)
+        promptPath = path.join(promptsDir, filename)
+    } else {
+        // Fall back to workspace path (original behavior during transition)
+        promptPath = path.join(config.workspace, 'templates/estrutural/0 Workflow e Agentes', filename)
+    }
 
     try {
         const raw = await fs.readFile(promptPath, 'utf-8')
         const cleaned = cleanPrompt(raw)
-        promptCache.set(agentId, cleaned)
-        console.log(`[PromptLoader] Loaded agent ${agentId} prompt (${cleaned.length} chars)`)
+        // AC-4: Store with timestamp for TTL expiration
+        promptCache.set(agentId, {
+            content: cleaned,
+            cachedAt: Date.now(),
+        })
+        console.log(`[PromptLoader] Loaded agent ${agentId} prompt (${cleaned.length} chars) [TTL: ${PROMPT_CACHE_TTL_MS / 1000}s]`)
         return cleaned
     } catch (e) {
-        throw new Error(`Failed to load agent ${agentId} prompt from ${promptPath}: ${e.message}`)
+        throw new Error(`Failed to load agent ${agentId} prompt from ${promptPath}: ${e.message}`, { cause: e })
     }
 }
 

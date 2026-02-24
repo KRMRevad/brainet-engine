@@ -15,9 +15,19 @@ import { isSearchConfigured } from './web-search.js'
 import { checkCouncilHealth } from './council.js'
 import { initJobQueue, createJob, getJob, getAllJobs, getJobFull } from './job-queue.js'
 import { executePipeline, addProgressListener, removeProgressListener, getPipelineAgents } from './agent-executor.js'
+import { requireAuth, authenticate } from './auth.js'
+import { sanitizeInput } from '../src/utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
+
+// --- CORS Configuration with whitelist (AC-2) ---
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim())
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+}))
+app.use(express.json())
 
 // Cache nichos data for validation
 let nichosCache = null
@@ -35,14 +45,11 @@ async function getNichosData() {
 }
 
 function isValidNichoId(nichoId, nichosData) {
-    if (!nichosData) return true // Skip validation if cache unavailable
-    return nichosData.nichos.some(n => n.id === nichoId)
+    if (!nichosCache) return true // Skip validation if cache unavailable
+    return nichosCache.nichos.some(n => n.id === nichoId)
 }
 
-app.use(cors())
-app.use(express.json())
-
-// --- HEALTH ---
+// --- HEALTH (No auth required) ---
 app.get('/api/health', async (req, res) => {
     const llm = await checkLLMHealth()
     const search = isSearchConfigured()
@@ -56,6 +63,42 @@ app.get('/api/health', async (req, res) => {
         council,
         agents: Object.keys(config.agents.promptFiles).length,
     })
+})
+
+// --- AUTH LOGIN (No auth required) (AC-1) ---
+/**
+ * POST /api/auth/login
+ * Body: { password }
+ * Returns: { token }
+ */
+app.post('/api/auth/login', (req, res) => {
+    const { password } = req.body
+
+    if (!password) {
+        return res.status(400).json({ error: 'Password required' })
+    }
+
+    const token = authenticate(password)
+    if (!token) {
+        return res.status(401).json({ error: 'Invalid password' })
+    }
+
+    res.json({ token })
+})
+
+// --- AUTH MIDDLEWARE (AC-1: All endpoints require auth except health and login) ---
+app.use((req, res, next) => {
+    // Whitelist endpoints that don't require auth
+    if (req.path === '/api/health' || req.path === '/api/auth/login') {
+        return next()
+    }
+
+    // All other /api/* endpoints require auth
+    if (req.path.startsWith('/api/')) {
+        return requireAuth(req, res, next)
+    }
+
+    next()
 })
 
 // --- GET NICHOS (from data file) ---
@@ -75,11 +118,16 @@ app.get('/api/agents', (req, res) => {
 
 // --- START PIPELINE ---
 app.post('/api/pipeline/start', async (req, res) => {
-    const { nichoId, angulo, subtema, formato, councilMode } = req.body
+    let { nichoId, angulo, subtema, formato, councilMode } = req.body
 
     if (!nichoId || !angulo) {
         return res.status(400).json({ error: 'nichoId and angulo are required' })
     }
+
+    // AC-3: Sanitize input fields
+    angulo = sanitizeInput(angulo, 500)
+    if (subtema) subtema = sanitizeInput(subtema, 500)
+    if (formato) formato = sanitizeInput(formato, 500)
 
     // Load nicho from data
     let nichosData

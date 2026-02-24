@@ -1,7 +1,7 @@
 [
   {
     "id": "job_1771614173655_n2zkd2",
-    "status": "running",
+    "status": "failed",
     "createdAt": "2026-02-20T19:02:53.655Z",
     "updatedAt": "2026-02-20T19:09:27.948Z",
     "input": {
@@ -34,7 +34,7 @@
   },
   {
     "id": "job_1771608326683_sdrub9",
-    "status": "running",
+    "status": "failed",
     "createdAt": "2026-02-20T17:25:26.683Z",
     "updatedAt": "2026-02-20T17:45:00.610Z",
     "input": {
@@ -73,7 +73,7 @@
   },
   {
     "id": "job_1771578831857_wgndfo",
-    "status": "running",
+    "status": "failed",
     "createdAt": "2026-02-20T09:13:51.858Z",
     "updatedAt": "2026-02-20T09:13:51.862Z",
     "input": {
@@ -98,7 +98,7 @@
   },
   {
     "id": "job_1771578623077_iieg5q",
-    "status": "running",
+    "status": "failed",
     "createdAt": "2026-02-20T09:10:23.077Z",
     "updatedAt": "2026-02-20T09:10:23.083Z",
     "input": {
@@ -123,7 +123,7 @@
   },
   {
     "id": "job_1771577188876_5d0v4y",
-    "status": "running",
+    "status": "failed",
     "createdAt": "2026-02-20T08:46:28.877Z",
     "updatedAt": "2026-02-20T08:52:26.052Z",
     "input": {

@@ -3,8 +3,8 @@
  */
 
 import { navigateTo } from '../main.js'
-
-const API_BASE = 'http://localhost:3001'
+import { API_BASE } from '../config.js'
+import { escapeHtml } from '../utils.js'
 
 export async function renderJobs(container) {
     container.innerHTML = `
@@ -126,6 +126,3 @@ ${escapeHtml(output.substring(0, 5000))}${output.length > 5000 ? '\n\n... [ver c
     })
 }
 
-function escapeHtml(text) {
-    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}

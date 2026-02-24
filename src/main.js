@@ -69,8 +69,8 @@ function init() {
     initParticles()
 }
 
-function updateNavStats() {
-    const stats = getTaxonomyStats()
+async function updateNavStats() {
+    const stats = await getTaxonomyStats()
     const el = document.getElementById('nav-stats')
     el.innerHTML = `${stats.nichos} nichos · ${stats.angulos} ângulos · ${stats.explorations} rolls`
 }
