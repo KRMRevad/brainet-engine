@@ -47,10 +47,10 @@ export default {
         maxQueriesPerPillar: 5,
     },
 
-    // Workspace paths
-    workspace: '/Volumes/Seagate 500/Obsidian Vault/EVAD/1 BRAINET ',
+    // Workspace paths (must be set via environment variable)
+    workspace: process.env.WORKSPACE_PATH,
     agents: {
-        promptDir: 'templates/estrutural/0 Workflow e Agentes',
+        promptDir: process.env.PROMPTS_PATH || 'templates/estrutural/0 Workflow e Agentes',
         promptFiles: {
             1: '1_PESQUISA_PROFUNDA_V2.md',
             2: '2_EXTRACAO_CONHECIMENTO_V2.md',
