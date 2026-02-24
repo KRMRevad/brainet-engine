@@ -2,6 +2,17 @@
    BRAINET Design System — Dark Premium Theme
    ============================================ */
 
+/* --- CSS MODULAR ARCHITECTURE (T13, AC-14) --- */
+/* Importing modular CSS files for responsive design */
+@import './styles/tokens.css';
+@import './styles/base.css';
+@import './styles/nav.css';
+@import './styles/landing.css';
+@import './styles/pipeline.css';
+@import './styles/jobs.css';
+@import './styles/graph.css';
+@import './styles/stats.css';
+
 /* --- RESET & BASE --- */
 *,
 *::before,
