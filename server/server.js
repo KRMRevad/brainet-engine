@@ -19,6 +19,26 @@ import { executePipeline, addProgressListener, removeProgressListener, getPipeli
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 
+// Cache nichos data for validation
+let nichosCache = null
+
+async function getNichosData() {
+    if (nichosCache) return nichosCache
+    try {
+        const raw = await fs.readFile(path.join(__dirname, '..', 'data', 'nichos.json'), 'utf-8')
+        nichosCache = JSON.parse(raw)
+        return nichosCache
+    } catch (e) {
+        console.error('[Server] Failed to load nichos cache:', e.message)
+        return null
+    }
+}
+
+function isValidNichoId(nichoId, nichosData) {
+    if (!nichosData) return true // Skip validation if cache unavailable
+    return nichosData.nichos.some(n => n.id === nichoId)
+}
+
 app.use(cors())
 app.use(express.json())
 
@@ -34,7 +54,6 @@ app.get('/api/health', async (req, res) => {
         llm,
         search: { configured: search, provider: 'brave' },
         council,
-        workspace: config.workspace,
         agents: Object.keys(config.agents.promptFiles).length,
     })
 })
@@ -146,8 +165,92 @@ app.get('/api/pipeline/output/:jobId', (req, res) => {
 })
 
 // --- LIST ALL JOBS ---
-app.get('/api/jobs', (req, res) => {
-    res.json({ jobs: getAllJobs() })
+app.get('/api/jobs', async (req, res) => {
+    try {
+        const jobs = await getAllJobs()
+        res.json({ jobs })
+    } catch (e) {
+        console.error('[API] Error fetching jobs:', e.message)
+        res.status(500).json({ error: e.message })
+    }
+})
+
+// --- EXPLORATION TRACKING (T7) ---
+/**
+ * POST /api/exploration
+ * Record a dice roll / niche exploration
+ * Body: { nichoId, sessionId, userAgent?, ipAddress? }
+ */
+app.post('/api/exploration', async (req, res) => {
+    try {
+        const { nichoId, sessionId, userAgent, ipAddress } = req.body
+
+        if (!nichoId || !sessionId) {
+            return res.status(400).json({ error: 'nichoId and sessionId required' })
+        }
+
+        // Validate nichoId against known nichos
+        const nichosData = await getNichosData()
+        if (!isValidNichoId(nichoId, nichosData)) {
+            return res.status(400).json({ error: `Invalid nichoId: ${nichoId}` })
+        }
+
+        const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+
+        if (isSupabaseConfigured()) {
+            const supabase = getSupabaseClient()
+            const { error } = await supabase
+                .from('exploration_history')
+                .insert({
+                    nicho_id: nichoId,
+                    session_id: sessionId,
+                    user_agent: userAgent,
+                    ip_address: ipAddress,
+                })
+
+            if (error) throw error
+        } else {
+            console.log('[API] Exploration recorded (DB not configured):', nichoId)
+        }
+
+        res.json({ success: true })
+    } catch (e) {
+        console.error('[API] Error recording exploration:', e.message)
+        res.status(500).json({ error: e.message })
+    }
+})
+
+/**
+ * GET /api/exploration/stats
+ * Get exploration statistics by niche
+ * Returns: { stats: { nichoId: count, ... } }
+ */
+app.get('/api/exploration/stats', async (req, res) => {
+    try {
+        const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+
+        if (isSupabaseConfigured()) {
+            const supabase = getSupabaseClient()
+            const { data, error } = await supabase
+                .from('exploration_history')
+                .select('nicho_id')
+
+            if (error) throw error
+
+            // Count by nicho_id
+            const stats = {}
+            data?.forEach(row => {
+                stats[row.nicho_id] = (stats[row.nicho_id] || 0) + 1
+            })
+
+            res.json({ stats })
+        } else {
+            res.json({ stats: {}, note: 'Database not configured' })
+        }
+    } catch (e) {
+        console.error('[API] Error fetching exploration stats:', e.message)
+        res.status(500).json({ error: e.message })
+    }
 })
 
 // --- START SERVER ---
