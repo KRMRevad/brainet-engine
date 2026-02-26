@@ -3,8 +3,12 @@
  * Express.js API with SSE for real-time pipeline progress
  */
 
+import 'dotenv/config'
+
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -17,6 +21,7 @@ import { initJobQueue, createJob, getJob, getAllJobs, getJobFull } from './job-q
 import { executePipeline, addProgressListener, removeProgressListener, getPipelineAgents } from './agent-executor.js'
 import { requireAuth, authenticate } from './auth.js'
 import { sanitizeInput } from '../src/utils.js'
+import { resolve as llmResolve, getResolverHealth } from './llm-resolver.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -28,6 +33,31 @@ app.use(cors({
     credentials: true,
 }))
 app.use(express.json())
+
+// --- SECURITY HEADERS (QA: Helmet) ---
+app.use(helmet({
+    contentSecurityPolicy: false, // Vite dev proxy handles CSP
+    crossOriginEmbedderPolicy: false,
+}))
+
+// --- RATE LIMITING (QA: API abuse prevention) ---
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 60, // 60 requests per minute per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+})
+app.use('/api/', apiLimiter)
+
+// --- PROCESS ERROR HANDLERS (QA: crash resilience) ---
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[FATAL] Unhandled Rejection:', reason)
+})
+process.on('uncaughtException', (err) => {
+    console.error('[FATAL] Uncaught Exception:', err)
+    process.exit(1)
+})
 
 // Cache nichos data for validation
 let nichosCache = null
@@ -89,7 +119,7 @@ app.post('/api/auth/login', (req, res) => {
 // --- AUTH MIDDLEWARE (AC-1: All endpoints require auth except health and login) ---
 app.use((req, res, next) => {
     // Whitelist endpoints that don't require auth
-    if (req.path === '/api/health' || req.path === '/api/auth/login') {
+    if (req.path === '/api/health' || req.path === '/api/auth/login' || req.path === '/api/resolver/health') {
         return next()
     }
 
@@ -301,26 +331,69 @@ app.get('/api/exploration/stats', async (req, res) => {
     }
 })
 
+// --- RESOLVER ENDPOINTS ---
+app.get('/api/resolver/health', async (req, res) => {
+    try {
+        const health = await getResolverHealth()
+        res.json(health)
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
+app.post('/api/resolver/resolve', async (req, res) => {
+    try {
+        let { systemPrompt, userPrompt, heavy, agentId, maxTokens, temperature } = req.body
+        if (!userPrompt) return res.status(400).json({ error: 'userPrompt is required' })
+
+        // QA: Sanitize inputs
+        userPrompt = sanitizeInput(userPrompt, 16000)
+        if (systemPrompt) systemPrompt = sanitizeInput(systemPrompt, 4000)
+        if (agentId) agentId = sanitizeInput(String(agentId), 50)
+
+        // QA: Validate numeric params
+        if (maxTokens != null && (typeof maxTokens !== 'number' || maxTokens < 1 || maxTokens > 32000)) {
+            return res.status(400).json({ error: 'maxTokens must be 1-32000' })
+        }
+        if (temperature != null && (typeof temperature !== 'number' || temperature < 0 || temperature > 2)) {
+            return res.status(400).json({ error: 'temperature must be 0-2' })
+        }
+
+        const result = await llmResolve(
+            systemPrompt || 'You are a helpful assistant.',
+            userPrompt,
+            { heavy: !!heavy, agentId, maxTokens, temperature }
+        )
+        res.json(result)
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
 // --- START SERVER ---
 async function start() {
     await initJobQueue()
     const council = await checkCouncilHealth()
+    let resolverInfo = { activeTiers: [] }
+    try { resolverInfo = await getResolverHealth() } catch { }
 
     app.listen(config.port, () => {
+        const tierStatus = resolverInfo.tiers?.map(t => `${t.name}:${t.status}`).join(' → ') || 'unknown'
         console.log(`
-╔═══════════════════════════════════════════════════╗
-║   🧠 BRAINET Backend Server v3.0 — AI Council    ║
-║   http://localhost:${config.port}                           ║
-╠═══════════════════════════════════════════════════╣
-║   Council Mode: ${(config.council.defaultMode || 'solo').toUpperCase().padEnd(31)}║
-║   Chrome CDP: ${council.connected ? '✅ Connected' : '❌ Not connected'.padEnd(20)}              ║
-║   💚 ChatGPT: ${(council.ais?.chatgpt?.available ? '✅ Ready' : '—').padEnd(33)}║
-║   🟠 Claude:  ${(council.ais?.claude?.available ? '✅ Ready' : '—').padEnd(33)}║
-║   🔵 Gemini:  ${(council.ais?.gemini?.available ? '✅ Ready' : '—').padEnd(33)}║
-║   LLM Fallback: ${config.llm.provider.padEnd(31)}║
-║   Search: ${isSearchConfigured() ? 'Brave API ✅'.padEnd(30) : 'No API key ⚠️'.padEnd(30)}          ║
-║   Agents: ${Object.keys(config.agents.promptFiles).length} prompt files loaded                ║
-╚═══════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════╗
+║   🧠 BRAINET Backend Server v4.0 — LLM Resolver      ║
+║   http://localhost:${config.port}                               ║
+╠═══════════════════════════════════════════════════════╣
+║   Resolver Tiers: ${resolverInfo.activeTiers?.length || 0} active                           ║
+║   ┣ Local Ollama:  ${(resolverInfo.tiers?.find(t => t.name === 'local')?.status === 'online' ? '✅ ' + (resolverInfo.tiers?.find(t => t.name === 'local')?.model || '') : '❌ offline').padEnd(35)}║
+║   ┣ Remote Ollama: ${(resolverInfo.tiers?.find(t => t.name === 'remote')?.status === 'online' ? '✅ ' + (resolverInfo.tiers?.find(t => t.name === 'remote')?.model || '') : '— disabled').padEnd(35)}║
+║   ┣ Browser AIs:   ${(resolverInfo.tiers?.find(t => t.name === 'browser')?.status === 'online' ? '✅ ' + resolverInfo.tiers?.find(t => t.name === 'browser')?.count + ' available' : '❌ offline').padEnd(35)}║
+║   ┣ Cloud API:     ${(resolverInfo.tiers?.find(t => t.name === 'api')?.status === 'online' ? '✅ ' + (config.llm.provider || '') : '❌ no key').padEnd(35)}║
+║   ┗ GLM5 MCP:      ${(process.env.GLM5_URL ? '✅ configured' : '— not configured').padEnd(35)}║
+║   Council Mode: ${(config.council.defaultMode || 'solo').toUpperCase().padEnd(37)}║
+║   Search: ${isSearchConfigured() ? 'Brave API ✅'.padEnd(38) : 'No API key ⚠️'.padEnd(38)}    ║
+║   Agents: ${Object.keys(config.agents.promptFiles).length} prompt files loaded                    ║
+╚═══════════════════════════════════════════════════════╝
 ${!council.connected ? '\n⚠️  To enable AI Council, start Chrome with:\n    /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9225\n    Then open tabs: chatgpt.com, claude.ai, gemini.google.com\n' : ''}
     `)
     })

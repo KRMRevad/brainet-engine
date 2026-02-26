@@ -3,6 +3,8 @@
  * Provides consistent error UI across all views with recovery options
  */
 
+import { escapeHtml } from '../utils.js'
+
 /**
  * Error state types and messages
  */
@@ -295,18 +297,6 @@ export function showNetworkErrorBanner() {
 export function hideNetworkErrorBanner() {
   const banner = document.getElementById('network-error-banner');
   if (banner) banner.remove();
-}
-
-/**
- * Escape HTML to prevent injection
- */
-function escapeHtml(unsafe) {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
 
 // Initialize network error listener on module load
