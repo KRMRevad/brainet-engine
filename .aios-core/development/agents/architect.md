@@ -161,6 +161,9 @@ commands:
   - name: create-brownfield-architecture
     visibility: [full]
     description: 'Architecture for existing projects'
+  - name: brown-disc
+    visibility: [full, quick, key]
+    description: 'Alias → *workflow brownfield-discovery (Complete Technical Debt Assessment)'
 
   # Documentation & Analysis
   - name: document-project
@@ -382,6 +385,7 @@ autoClaude:
 
 - `*create-full-stack-architecture` - Complete system design
 - `*create-front-end-architecture` - Frontend architecture
+- `*brown-disc` — Inicia Brownfield Discovery completo (alias para *workflow brownfield-discovery)
 
 **Documentation & Analysis:**
 
