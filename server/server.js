@@ -22,12 +22,14 @@ import { executePipeline, addProgressListener, removeProgressListener, getPipeli
 import { requireAuth, authenticate } from './auth.js'
 import { sanitizeInput } from '../src/utils.js'
 import { resolve as llmResolve, getResolverHealth } from './llm-resolver.js'
+import { executeCouncil } from './council-orchestrator.js'
+import { initCouncilStore, createCouncilJob, getCouncilJob, updateCouncilJob, listCouncilJobs } from './council-job-store.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 
-// --- CORS Configuration with whitelist (AC-2) ---
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim())
+// --- CORS Configuration with strict whitelist (AC-2) ---
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3001').split(',').map(o => o.trim())
 app.use(cors({
     origin: allowedOrigins,
     credentials: true,
@@ -116,14 +118,14 @@ app.post('/api/auth/login', (req, res) => {
     res.json({ token })
 })
 
-// --- AUTH MIDDLEWARE (AC-1: All endpoints require auth except health and login) ---
+// --- AUTH MIDDLEWARE (AC-1: All /api/* endpoints require JWT except /api/health and /api/auth/login) ---
 app.use((req, res, next) => {
-    // Whitelist endpoints that don't require auth
-    if (req.path === '/api/health' || req.path === '/api/auth/login' || req.path === '/api/resolver/health') {
+    // Whitelist endpoints that don't require auth (only health and login)
+    if (req.path === '/api/health' || req.path === '/api/auth/login') {
         return next()
     }
 
-    // All other /api/* endpoints require auth
+    // All other /api/* endpoints require JWT auth (including /api/resolver/health)
     if (req.path.startsWith('/api/')) {
         return requireAuth(req, res, next)
     }
@@ -331,11 +333,252 @@ app.get('/api/exploration/stats', async (req, res) => {
     }
 })
 
+// --- COUNCIL ORCHESTRATOR ENDPOINTS ---
+
+/**
+ * POST /api/council/job
+ * Create and execute a new council job
+ * Body: council input schema (tema, objetivo, etc.)
+ */
+app.post('/api/council/job', async (req, res) => {
+    try {
+        const { tema, contexto, objetivo, profundidade, fontes, restricoes, metadados, council_config } = req.body
+
+        // Validate required fields
+        if (!tema || tema.length < 3) {
+            return res.status(400).json({ error: 'tema is required (min 3 chars)' })
+        }
+        if (!objetivo) {
+            return res.status(400).json({ error: 'objetivo is required' })
+        }
+        const validObjetivos = ['pesquisa', 'sintese', 'estrategia', 'analise', 'comparacao', 'criacao', 'revisao']
+        if (!validObjetivos.includes(objetivo)) {
+            return res.status(400).json({ error: `objetivo must be one of: ${validObjetivos.join(', ')}` })
+        }
+
+        // Build job data
+        const job = {
+            id: crypto.randomUUID(),
+            tema: sanitizeInput(tema, 500),
+            contexto: contexto ? sanitizeInput(contexto, 5000) : null,
+            objetivo,
+            profundidade: profundidade || 'padrao',
+            fontes: fontes || [],
+            restricoes: restricoes || { idioma: 'pt-BR', formato_output: 'markdown', tom: 'tecnico', max_tokens: 8000 },
+            metadados: metadados || {},
+            council_config: council_config || { modo: 'completo', desafiar: true },
+            status: 'queued',
+            created_at: new Date().toISOString(),
+        }
+
+        // Store job in council job store (fallback cache)
+        createCouncilJob(job)
+
+        // Try to persist to Supabase
+        try {
+            const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+            if (isSupabaseConfigured()) {
+                const supabase = getSupabaseClient()
+                await supabase.from('council_jobs').insert(job)
+            }
+        } catch (dbErr) {
+            console.warn('[Council API] Supabase insert failed, continuing with in-memory store:', dbErr.message)
+        }
+
+        // Return jobId immediately
+        res.json({ jobId: job.id, status: 'queued', message: 'Council job created. Processing...' })
+
+        // Execute council in background with progress tracking
+        executeCouncil(job, (status, data) => {
+            console.log(`[Council] Job ${job.id} — ${status}:`, JSON.stringify(data).slice(0, 200))
+
+            // Handle critical infrastructure errors
+            if (status === 'infrastructure_critical_error') {
+                console.error(`[Council] 🚨 INFRASTRUCTURE CRITICAL ERROR for job ${job.id}:`, data.error)
+                // Job will be marked as failed in the catch() handler
+            }
+
+            // Update intermediate status in council store
+            if (status === 'processing' || status === 'synthesizing') {
+                updateCouncilJob(job.id, { status }).catch(err =>
+                    console.warn('[Council API] Failed to update status:', err.message))
+            }
+        }).then(async (result) => {
+            // Update job in council store (fallback cache)
+            try {
+                await updateCouncilJob(job.id, {
+                    status: 'complete',
+                    ...result,
+                    completed_at: new Date().toISOString(),
+                })
+            } catch (storeErr) {
+                console.error('[Council API] Failed to update council job store:', storeErr.message)
+            }
+
+            // Update job in Supabase
+            try {
+                const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+                if (isSupabaseConfigured()) {
+                    const supabase = getSupabaseClient()
+                    await supabase.from('council_jobs').update({
+                        status: 'complete',
+                        ...result,
+                        completed_at: new Date().toISOString(),
+                    }).eq('id', job.id)
+                }
+            } catch (dbErr) {
+                console.warn('[Council API] Supabase update failed:', dbErr.message)
+            }
+            console.log(`[Council] ✅ Job ${job.id} complete in ${result.duration_ms}ms`)
+        }).catch(async (err) => {
+            console.error(`[Council] ❌ Job ${job.id} failed:`, err.message)
+
+            // Determine if this is a critical infrastructure error
+            const isCritical = err.message.includes('[CRITICAL]')
+            const errorStatus = isCritical ? 'error_infrastructure' : 'error'
+
+            // Update job status to reflect failure
+            try {
+                await updateCouncilJob(job.id, {
+                    status: errorStatus,
+                    error_message: err.message,
+                    completed_at: new Date().toISOString(),
+                })
+                console.log(`[Council] Job ${job.id} marked as ${errorStatus}`)
+            } catch (storeErr) {
+                console.error('[Council API] Failed to update job error status:', storeErr.message)
+            }
+
+            // Also update in Supabase if configured
+            try {
+                const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+                if (isSupabaseConfigured()) {
+                    const supabase = getSupabaseClient()
+                    await supabase.from('council_jobs').update({
+                        status: errorStatus,
+                        error_message: err.message,
+                        completed_at: new Date().toISOString(),
+                    }).eq('id', job.id)
+                }
+            } catch (dbErr) {
+                console.warn('[Council API] Supabase error update failed:', dbErr.message)
+            }
+        })
+
+    } catch (e) {
+        console.error('[Council API] Error:', e.message)
+        res.status(500).json({ error: e.message })
+    }
+})
+
+/**
+ * GET /api/council/job/:id
+ * Get council job status and result
+ */
+app.get('/api/council/job/:id', async (req, res) => {
+    try {
+        // Try to get from Supabase first
+        let job = null
+        try {
+            const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+            if (isSupabaseConfigured()) {
+                const supabase = getSupabaseClient()
+                const { data, error } = await supabase
+                    .from('council_jobs')
+                    .select('*')
+                    .eq('id', req.params.id)
+                    .single()
+
+                if (!error && data) {
+                    job = data
+                }
+            }
+        } catch (dbErr) {
+            console.warn('[Council API] Supabase fetch failed, trying cache:', dbErr.message)
+        }
+
+        // Fallback to council job store
+        if (!job) {
+            job = getCouncilJob(req.params.id)
+        }
+
+        if (!job) return res.status(404).json({ error: 'Job not found' })
+        res.json(job)
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
+/**
+ * GET /api/council/jobs
+ * List recent council jobs
+ */
+app.get('/api/council/jobs', async (req, res) => {
+    try {
+        let jobs = []
+
+        // Try Supabase first
+        try {
+            const { getSupabaseClient, isSupabaseConfigured } = await import('./supabase.js')
+            if (isSupabaseConfigured()) {
+                const supabase = getSupabaseClient()
+                const { data, error } = await supabase
+                    .from('council_jobs')
+                    .select('id, tema, objetivo, status, duration_ms, created_at, completed_at')
+                    .order('created_at', { ascending: false })
+                    .limit(50)
+
+                if (!error && data) {
+                    jobs = data
+                } else {
+                    throw error
+                }
+            }
+        } catch (dbErr) {
+            console.warn('[Council API] Supabase fetch failed, using cache:', dbErr.message)
+            // Fallback to council job store
+            jobs = listCouncilJobs(50).map(j => ({
+                id: j.id,
+                tema: j.tema,
+                objetivo: j.objetivo,
+                status: j.status,
+                duration_ms: j.duration_ms,
+                created_at: j.created_at,
+                completed_at: j.completed_at,
+            }))
+        }
+
+        res.json({ jobs })
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
 // --- RESOLVER ENDPOINTS ---
+// Note: /api/resolver/health requires JWT auth (no URL/LLM config exposure)
 app.get('/api/resolver/health', async (req, res) => {
     try {
         const health = await getResolverHealth()
-        res.json(health)
+
+        // Sanitize response: remove sensitive URLs and internal configuration
+        const sanitized = {
+            tiers: health.tiers.map(tier => {
+                const safe = {
+                    name: tier.name,
+                    status: tier.status,
+                }
+                // Only include model/count for non-config tiers (no URLs, no ais detail)
+                if (tier.name === 'local' && tier.model) safe.model = tier.model
+                if (tier.name === 'remote' && tier.model) safe.model = tier.model
+                if (tier.name === 'browser') safe.count = tier.count || 0
+                if (tier.name === 'api') safe.provider = tier.provider
+                // Omit: url, models array, ais detail, description
+                return safe
+            }),
+            activeTiers: health.tiers.filter(t => t.status === 'online').map(t => t.name),
+        }
+
+        res.json(sanitized)
     } catch (e) {
         res.status(500).json({ error: e.message })
     }
@@ -373,6 +616,7 @@ app.post('/api/resolver/resolve', async (req, res) => {
 // --- START SERVER ---
 async function start() {
     await initJobQueue()
+    await initCouncilStore()
     const council = await checkCouncilHealth()
     let resolverInfo = { activeTiers: [] }
     try { resolverInfo = await getResolverHealth() } catch { }
