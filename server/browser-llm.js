@@ -5,9 +5,297 @@
  */
 
 import puppeteer from 'puppeteer-core'
+import { getAdaptiveSelector } from './scrapling-bridge.js'
+import fs from 'fs/promises'
+import path from 'path'
 
 let browser = null
 let pages = {}
+const DEBUG_SCREENSHOTS_DIR = '/tmp/brainet-debug-screenshots'
+
+// Ensure debug directory exists (IIFE)
+;(async () => {
+    try {
+        await fs.mkdir(DEBUG_SCREENSHOTS_DIR, { recursive: true })
+    } catch (e) {
+        // Directory may already exist
+    }
+})()
+
+// ════════════════════════════════════════════════════════════════
+// HEALTH CHECK & DEBUGGING FUNCTIONS
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Take screenshot of page for debugging
+ * @param {Page} page - Puppeteer page
+ * @param {string} agent - Agent name (for filename)
+ * @param {string} stage - Stage name (e.g., "before-click", "after-send", "error")
+ * @returns {string} Path to saved screenshot
+ */
+async function takeDebugScreenshot(page, agent, stage) {
+    try {
+        const timestamp = Date.now()
+        const filename = `${agent}-${stage}-${timestamp}.png`
+        const filepath = path.join(DEBUG_SCREENSHOTS_DIR, filename)
+
+        await page.screenshot({ path: filepath, fullPage: false })
+        console.log(`[BrowserLLM] 📸 Screenshot saved: ${filepath}`)
+        return filepath
+    } catch (e) {
+        console.warn(`[BrowserLLM] Failed to take screenshot: ${e.message}`)
+        return null
+    }
+}
+
+/**
+ * Health check: Verify page loaded correctly and isn't showing error
+ * @param {Page} page - Puppeteer page
+ * @param {string} ai - AI name (chatgpt, gemini, claude, grok)
+ * @returns {object} { healthy: boolean, reason: string, screenshot?: string }
+ */
+async function healthCheckPage(page, ai) {
+    try {
+        console.log(`[BrowserLLM] 🏥 Health check for ${ai}...`)
+
+        // Check for common error pages
+        const errorIndicators = await page.evaluate(() => {
+            const indicators = {
+                '404': !!document.body.innerText?.includes('404'),
+                '500': !!document.body.innerText?.includes('500'),
+                'error_page': !!document.querySelector('[data-testid="error-page"], .error-page, .error-container'),
+                'loading_spinner': !!document.querySelector('[data-testid="loading"], .spinner, .loading, .lds-ring'),
+                'maintenance': !!document.body.innerText?.toLowerCase().includes('maintenance'),
+                'offline': !!document.body.innerText?.toLowerCase().includes('offline'),
+            }
+            return indicators
+        })
+
+        // Check page title
+        const title = await page.title()
+        console.log(`[BrowserLLM] Page title: "${title}"`)
+
+        // Evaluate health
+        const hasErrors = Object.values(errorIndicators).some(v => v)
+        if (hasErrors) {
+            const screenshot = await takeDebugScreenshot(page, ai, 'health-check-failed')
+            const reason = Object.entries(errorIndicators)
+                .filter(([_, v]) => v)
+                .map(([k]) => k)
+                .join(', ')
+            console.warn(`[BrowserLLM] ⚠️ Page unhealthy for ${ai}: ${reason}`)
+            return { healthy: false, reason, screenshot }
+        }
+
+        // Check if any interactive element is visible
+        const hasInteractiveElements = await page.evaluate(() => {
+            const inputs = document.querySelectorAll('textarea, [contenteditable="true"], input[type="text"]')
+            const buttons = document.querySelectorAll('button[type="submit"], button[aria-label*="Send"], button[aria-label*="send"]')
+
+            return {
+                inputs: inputs.length > 0,
+                buttons: buttons.length > 0,
+                inputsVisible: Array.from(inputs).some(el => el.offsetParent !== null),
+                buttonsVisible: Array.from(buttons).some(el => el.offsetParent !== null),
+            }
+        })
+
+        if (!hasInteractiveElements.inputsVisible || !hasInteractiveElements.buttonsVisible) {
+            console.warn(`[BrowserLLM] ⚠️ Missing interactive elements: ${JSON.stringify(hasInteractiveElements)}`)
+        }
+
+        console.log(`[BrowserLLM] ✓ Page healthy: ${JSON.stringify(errorIndicators)}`)
+        return { healthy: true, reason: 'OK' }
+    } catch (e) {
+        const screenshot = await takeDebugScreenshot(page, ai, 'health-check-error')
+        console.error(`[BrowserLLM] Health check error: ${e.message}`)
+        return { healthy: false, reason: e.message, screenshot }
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// CDP FALLBACK FUNCTIONS — Direct Protocol Commands
+// Bypass DOM timeouts with Chrome DevTools Protocol
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Force click via CDP when Puppeteer selector times out
+ * Uses Input.dispatchMouseEvent to send physical mouse clicks
+ * @param {Page} page - Puppeteer page object
+ * @param {string} selector - CSS selector to click
+ * @param {string} agent - Agent name for debugging
+ * @param {number} timeout - Max wait for CDP session (ms)
+ * @returns {boolean} true if click succeeded
+ */
+async function forceClickCDP(page, selector, agent = 'unknown', timeout = 5000) {
+    try {
+        console.log(`[BrowserLLM] 🖱️  Force click via CDP: ${selector}`)
+        const cdpSession = await page.target().createCDPSession()
+
+        // Get element bounding box with visual info
+        // eslint-disable-next-line no-undef
+        const bbox = await page.evaluate((sel) => {
+            const el = document.querySelector(sel)
+            if (!el) return null
+            const rect = el.getBoundingClientRect()
+            // eslint-disable-next-line no-undef
+            const style = window.getComputedStyle(el)
+            return {
+                x: rect.x + rect.width / 2,
+                y: rect.y + rect.height / 2,
+                visible: rect.width > 0 && rect.height > 0,
+                width: rect.width,
+                height: rect.height,
+                tagName: el.tagName,
+                className: el.className,
+                opacity: style.opacity,
+                display: style.display
+            }
+        }, selector)
+
+        if (!bbox) {
+            console.warn(`[BrowserLLM] ❌ Element selector not found: ${selector}`)
+            await takeDebugScreenshot(page, agent, 'click-selector-not-found')
+            await cdpSession.detach()
+            return false
+        }
+
+        if (!bbox.visible) {
+            console.warn(`[BrowserLLM] ❌ Element not visible: ${JSON.stringify(bbox)}`)
+            await takeDebugScreenshot(page, agent, 'click-not-visible')
+            await cdpSession.detach()
+            return false
+        }
+
+        console.log(`[BrowserLLM] Element found: ${bbox.tagName}.${bbox.className} (${bbox.width}x${bbox.height})`)
+
+        // Dispatch mouse down
+        await cdpSession.send('Input.dispatchMouseEvent', {
+            type: 'mousePressed',
+            x: bbox.x,
+            y: bbox.y,
+            button: 'left',
+            clickCount: 1
+        })
+
+        await new Promise(r => setTimeout(r, 50))
+
+        // Dispatch mouse up
+        await cdpSession.send('Input.dispatchMouseEvent', {
+            type: 'mouseReleased',
+            x: bbox.x,
+            y: bbox.y,
+            button: 'left',
+            clickCount: 1
+        })
+
+        await cdpSession.detach()
+        console.log(`[BrowserLLM] ✓ Force click succeeded: ${selector}`)
+        await takeDebugScreenshot(page, agent, 'click-success')
+        return true
+    } catch (e) {
+        console.error(`[BrowserLLM] ❌ Force click failed: ${e.message}`)
+        await takeDebugScreenshot(page, agent, 'click-error')
+        return false
+    }
+}
+
+/**
+ * Force type via CDP when Puppeteer keyboard times out
+ * Uses Input.insertText to send keystrokes directly
+ * @param {Page} page - Puppeteer page object
+ * @param {string} text - Text to type
+ * @param {string} agent - Agent name for debugging
+ * @param {number} chunkSize - Characters per batch (default 500)
+ * @returns {boolean} true if typing succeeded
+ */
+async function forceTypeCDP(page, text, agent = 'unknown', chunkSize = 500) {
+    try {
+        console.log(`[BrowserLLM] ⌨️  Force type via CDP: ${text.length} chars (${Math.ceil(text.length / chunkSize)} chunks)`)
+        const cdpSession = await page.target().createCDPSession()
+
+        // First, check what element is focused
+        const focusedInfo = await page.evaluate(() => {
+            const focused = document.activeElement
+            if (focused) {
+                focused.focus()
+                return {
+                    tagName: focused.tagName,
+                    type: focused.type,
+                    className: focused.className,
+                    contenteditable: focused.contentEditable,
+                    value: focused.value ? focused.value.substring(0, 50) : 'N/A'
+                }
+            }
+            return { error: 'No element focused' }
+        })
+
+        console.log(`[BrowserLLM] Focused element: ${JSON.stringify(focusedInfo)}`)
+
+        // Send text in chunks to avoid overwhelming the renderer
+        for (let i = 0; i < text.length; i += chunkSize) {
+            const chunk = text.slice(i, i + chunkSize)
+            const chunkNum = Math.floor(i / chunkSize) + 1
+            console.log(`[BrowserLLM] Typing chunk ${chunkNum}/${Math.ceil(text.length / chunkSize)} (${chunk.length} chars)`)
+
+            await cdpSession.send('Input.insertText', {
+                text: chunk
+            })
+            await new Promise(r => setTimeout(r, 100))
+        }
+
+        await cdpSession.detach()
+        console.log(`[BrowserLLM] ✓ Force type succeeded: ${text.length} chars`)
+        await takeDebugScreenshot(page, agent, 'type-success')
+        return true
+    } catch (e) {
+        console.error(`[BrowserLLM] ❌ Force type failed: ${e.message}`)
+        await takeDebugScreenshot(page, agent, 'type-error')
+        return false
+    }
+}
+
+/**
+ * Combined: Try Puppeteer method, fallback to CDP
+ */
+async function clickWithFallback(page, selector, agent = 'unknown', timeout = 15000) {
+    try {
+        // Try native Puppeteer first
+        const element = await page.waitForSelector(selector, { timeout: Math.min(timeout, 3000) })
+        if (element) {
+            await element.click()
+            console.log(`[BrowserLLM] ✓ Click succeeded (native): ${selector}`)
+            return true
+        }
+    } catch (e) {
+        console.warn(`[BrowserLLM] Native click failed (${e.message}), trying CDP...`)
+    }
+
+    // Fallback to CDP
+    return await forceClickCDP(page, selector, agent, timeout)
+}
+
+/**
+ * Combined: Try Puppeteer method, fallback to CDP
+ */
+async function typeWithFallback(page, selector, text, agent = 'unknown', timeout = 15000) {
+    try {
+        // Try native Puppeteer first
+        const input = await page.waitForSelector(selector, { timeout: Math.min(timeout, 3000) })
+        if (input) {
+            await input.click()
+            await new Promise(r => setTimeout(r, 300))
+            await page.keyboard.type(text, { delay: 10 })
+            console.log(`[BrowserLLM] ✓ Type succeeded (native): ${selector}`)
+            return true
+        }
+    } catch (e) {
+        console.warn(`[BrowserLLM] Native type failed (${e.message}), trying CDP...`)
+    }
+
+    // Fallback to CDP
+    return await forceTypeCDP(page, text, agent, timeout)
+}
 
 /**
  * AI Web UI Drivers — selectors and behavior for each AI
@@ -59,55 +347,89 @@ const AI_DRIVERS = {
             }
         },
         async typePrompt(page, text) {
-            const input = await page.waitForSelector('#prompt-textarea', { timeout: 15000 })
-            await input.click()
-            await sleep(500)
-            await page.keyboard.down('Meta')
-            await page.keyboard.press('a')
-            await page.keyboard.up('Meta')
-            await page.keyboard.press('Backspace')
+            // Health check before attempting interaction
+            const health = await healthCheckPage(page, 'chatgpt')
+            if (!health.healthy) {
+                throw new Error(`ChatGPT page unhealthy: ${health.reason}`)
+            }
 
-            // Insert large texts in chunks so we don't freeze the Chrome renderer
-            const chunkSize = 4000
-            for (let i = 0; i < text.length; i += chunkSize) {
-                const chunk = text.slice(i, i + chunkSize)
-                await page.evaluate((t) => {
-                    const el = document.querySelector('#prompt-textarea')
-                    if (el) {
-                        el.focus()
-                        document.execCommand('insertText', false, t)
-                    }
-                }, chunk)
-                await sleep(100)
+            const selector = await getAdaptiveSelector(page.url(), {
+                hints: ['#prompt-textarea', '[data-id="root"] textarea', '[data-testid="prompt-textarea"]'],
+                fallback: '#prompt-textarea'
+            })
+
+            // Try native method first, fallback to CDP if times out
+            const success = await typeWithFallback(page, selector, text, 'chatgpt', 15000)
+            if (!success) {
+                console.warn('[BrowserLLM] ❌ ChatGPT typePrompt failed with both methods')
+                await takeDebugScreenshot(page, 'chatgpt', 'typePrompt-failed')
+                throw new Error('Failed to type prompt in ChatGPT after native and CDP attempts')
             }
 
             // Trigger native react events so it registers the input
-            await page.keyboard.press('Space')
-            await page.keyboard.press('Backspace')
-            await sleep(1000)
+            try {
+                await page.keyboard.press('Space')
+                await page.keyboard.press('Backspace')
+                await sleep(1000)
+            } catch (e) {
+                console.warn('[BrowserLLM] Could not trigger react events:', e.message)
+            }
         },
         async sendMessage(page) {
-            const sendBtn = await page.$('button[data-testid="send-button"]')
-            if (sendBtn) {
-                await sendBtn.click()
-            } else {
+            try {
+                // Try to click send button with fallback
+                const clicked = await clickWithFallback(page, 'button[data-testid="send-button"]', 'chatgpt', 5000)
+                if (clicked) {
+                    return
+                }
+            } catch (e) {
+                console.warn('[BrowserLLM] Send button click failed:', e.message)
+                await takeDebugScreenshot(page, 'chatgpt', 'sendMessage-click-failed')
+            }
+
+            // Fallback: press Enter
+            try {
                 await page.keyboard.press('Enter')
+            } catch (e) {
+                console.warn('[BrowserLLM] ❌ Enter key also failed:', e.message)
+                await takeDebugScreenshot(page, 'chatgpt', 'sendMessage-keyboard-failed')
+                throw new Error('Could not send message in ChatGPT', { cause: e })
             }
         },
         async waitForResponse(page, initialCount, timeout = 300000) {
-            console.log(`[BrowserLLM] ChatGPT waiting for response... (initial count: ${initialCount})`)
+            console.log(`[BrowserLLM] ⏳ ChatGPT waiting for response... (initial count: ${initialCount}, timeout: ${timeout}ms)`)
 
-            // 1. Wait for a NEW message to be added to DOM
-            await page.waitForFunction((initial) => {
-                return document.querySelectorAll('[data-message-author-role="assistant"]').length > initial
-            }, { timeout, polling: 1000 }, initialCount).catch(() => console.log('Timeout waiting for ChatGPT new message element'))
+            // Step 1: Wait for a NEW message to be added to DOM
+            try {
+                console.log(`[BrowserLLM] Step 1: Waiting for new assistant message...`)
+                const startTime = Date.now()
+                await page.waitForFunction((initial) => {
+                    const count = document.querySelectorAll('[data-message-author-role="assistant"]').length
+                    return count > initial
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 }, initialCount)
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ New message detected in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for ChatGPT new message element: ${e.message}`)
+                await takeDebugScreenshot(page, 'chatgpt', 'waitForResponse-no-message')
+            }
 
             await sleep(2000)
 
-            // 2. Wait for streaming to finish (stop button disappears)
-            await page.waitForFunction(() => {
-                return !document.querySelector('button[aria-label="Stop generating"], [data-testid="stop-button"]')
-            }, { timeout, polling: 1000 }).catch(() => console.log('Timeout waiting for ChatGPT stream to finish'))
+            // Step 2: Wait for streaming to finish (stop button disappears)
+            try {
+                console.log(`[BrowserLLM] Step 2: Waiting for generation to finish...`)
+                const startTime = Date.now()
+                await page.waitForFunction(() => {
+                    const stopBtn = document.querySelector('button[aria-label="Stop generating"], [data-testid="stop-button"]')
+                    return !stopBtn
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 })
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ Generation finished in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for ChatGPT stream to finish: ${e.message}`)
+                await takeDebugScreenshot(page, 'chatgpt', 'waitForResponse-still-generating')
+            }
 
             await sleep(2000)
         },
@@ -153,56 +475,89 @@ const AI_DRIVERS = {
             }
         },
         async typePrompt(page, text) {
-            const input = await page.waitForSelector('[contenteditable="true"].ProseMirror, div[contenteditable="true"]', { timeout: 15000 })
-            await input.click()
-            await sleep(500)
-            await page.keyboard.down('Meta')
-            await page.keyboard.press('a')
-            await page.keyboard.up('Meta')
-            await page.keyboard.press('Backspace')
-
-            const chunkSize = 4000
-            for (let i = 0; i < text.length; i += chunkSize) {
-                const chunk = text.slice(i, i + chunkSize)
-                await page.evaluate((t) => {
-                    const el = document.querySelector('[contenteditable="true"].ProseMirror') ||
-                        document.querySelector('div[contenteditable="true"]')
-                    if (el) {
-                        el.focus()
-                        document.execCommand('insertText', false, t)
-                    }
-                }, chunk)
-                await sleep(100)
+            // Health check before attempting interaction
+            const health = await healthCheckPage(page, 'claude')
+            if (!health.healthy) {
+                throw new Error(`Claude page unhealthy: ${health.reason}`)
             }
 
-            await page.keyboard.press('Space')
-            await page.keyboard.press('Backspace')
-            await sleep(1000)
+            const selector = await getAdaptiveSelector(page.url(), {
+                hints: ['[contenteditable="true"].ProseMirror', 'div[contenteditable="true"]', '.ProseMirror'],
+                fallback: '[contenteditable="true"].ProseMirror, div[contenteditable="true"]'
+            })
+
+            // Try native method first, fallback to CDP if times out
+            const success = await typeWithFallback(page, selector, text, 'claude', 15000)
+            if (!success) {
+                console.warn('[BrowserLLM] ❌ Claude typePrompt failed with both methods')
+                await takeDebugScreenshot(page, 'claude', 'typePrompt-failed')
+                throw new Error('Failed to type prompt in Claude after native and CDP attempts')
+            }
+
+            // Trigger react events to register the input
+            try {
+                await page.keyboard.press('Space')
+                await page.keyboard.press('Backspace')
+                await sleep(1000)
+            } catch (e) {
+                console.warn('[BrowserLLM] Could not trigger react events:', e.message)
+            }
         },
         async sendMessage(page) {
-            const sendBtn = await page.$('button[aria-label="Send Message"]') ||
-                await page.$('button[type="submit"]')
-            if (sendBtn) {
-                await sendBtn.click()
-            } else {
+            try {
+                // Try send button with fallback
+                const clicked = await clickWithFallback(page, 'button[aria-label="Send Message"], button[type="submit"]', 'claude', 5000)
+                if (clicked) {
+                    return
+                }
+            } catch (e) {
+                console.warn('[BrowserLLM] Send button click failed:', e.message)
+                await takeDebugScreenshot(page, 'claude', 'sendMessage-click-failed')
+            }
+
+            // Fallback: press Enter
+            try {
                 await page.keyboard.press('Enter')
+            } catch (e) {
+                console.warn('[BrowserLLM] ❌ Enter key also failed:', e.message)
+                await takeDebugScreenshot(page, 'claude', 'sendMessage-keyboard-failed')
+                throw new Error('Could not send message in Claude', { cause: e })
             }
         },
         async waitForResponse(page, initialCount, timeout = 300000) {
-            console.log(`[BrowserLLM] Claude waiting for response... (initial count: ${initialCount})`)
+            console.log(`[BrowserLLM] ⏳ Claude waiting for response... (initial count: ${initialCount}, timeout: ${timeout}ms)`)
 
-            // Wait for new message
-            await page.waitForFunction((initial) => {
-                return document.querySelectorAll('.font-claude-message').length > initial
-            }, { timeout, polling: 1000 }, initialCount).catch(() => console.log('Timeout waiting for Claude new message element'))
+            // Step 1: Wait for new message element to appear
+            try {
+                console.log(`[BrowserLLM] Step 1: Waiting for new message element...`)
+                const startTime = Date.now()
+                await page.waitForFunction((initial) => {
+                    const count = document.querySelectorAll('.font-claude-message').length
+                    return count > initial
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 }, initialCount)
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ New message detected in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for Claude new message element: ${e.message}`)
+                await takeDebugScreenshot(page, 'claude', 'waitForResponse-no-message')
+            }
 
             await sleep(2000)
 
-            // Wait for streaming to complete
-            await page.waitForFunction(() => {
-                return !document.querySelector('.stop-button') &&
-                    !document.querySelector('button[aria-label="Stop generating"]')
-            }, { timeout, polling: 1000 }).catch(() => console.log('Timeout waiting for Claude stream to finish'))
+            // Step 2: Wait for streaming to complete (stop button disappears)
+            try {
+                console.log(`[BrowserLLM] Step 2: Waiting for generation to finish...`)
+                const startTime = Date.now()
+                await page.waitForFunction(() => {
+                    return !document.querySelector('.stop-button') &&
+                        !document.querySelector('button[aria-label="Stop generating"]')
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 })
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ Generation finished in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for Claude stream to finish: ${e.message}`)
+                await takeDebugScreenshot(page, 'claude', 'waitForResponse-still-generating')
+            }
 
             await sleep(2000)
         },
@@ -225,59 +580,91 @@ const AI_DRIVERS = {
             return await page.evaluate(() => document.querySelectorAll('message-content, .model-response-text').length)
         },
         async typePrompt(page, text) {
-            const input = await page.waitForSelector('.ql-editor, div[contenteditable="true"], .input-area [contenteditable]', { timeout: 15000 })
-            await input.click()
-            await sleep(500)
-
-            await page.keyboard.down('Meta')
-            await page.keyboard.press('a')
-            await page.keyboard.up('Meta')
-            await page.keyboard.press('Backspace')
-
-            const chunkSize = 4000
-            for (let i = 0; i < text.length; i += chunkSize) {
-                const chunk = text.slice(i, i + chunkSize)
-                await page.evaluate((t) => {
-                    const el = document.querySelector('.ql-editor') ||
-                        document.querySelector('div[contenteditable="true"]')
-                    if (el) {
-                        el.focus()
-                        document.execCommand('insertText', false, t)
-                    }
-                }, chunk)
-                await sleep(100)
+            // Health check before attempting interaction
+            const health = await healthCheckPage(page, 'gemini')
+            if (!health.healthy) {
+                throw new Error(`Gemini page unhealthy: ${health.reason}`)
             }
 
-            await page.keyboard.press('Space')
-            await page.keyboard.press('Backspace')
-            await sleep(1500) // Gemini needs a bit more time to register
+            const selector = await getAdaptiveSelector(page.url(), {
+                hints: ['.ql-editor', 'div[contenteditable="true"]', '.input-area [contenteditable]', 'rich-textarea'],
+                fallback: '.ql-editor, div[contenteditable="true"], .input-area [contenteditable]'
+            })
+
+            // Try native method first, fallback to CDP if times out
+            const success = await typeWithFallback(page, selector, text, 'gemini', 15000)
+            if (!success) {
+                console.warn('[BrowserLLM] ❌ Gemini typePrompt failed with both methods')
+                await takeDebugScreenshot(page, 'gemini', 'typePrompt-failed')
+                throw new Error('Failed to type prompt in Gemini after native and CDP attempts')
+            }
+
+            // Trigger react events to register the input
+            try {
+                await page.keyboard.press('Space')
+                await page.keyboard.press('Backspace')
+                await sleep(1500) // Gemini needs a bit more time to register
+            } catch (e) {
+                console.warn('[BrowserLLM] Could not trigger react events:', e.message)
+            }
         },
         async sendMessage(page) {
-            // Find send button to ensure it clicks instead of just pressing enter which can be flaky
-            const sendBtn = await page.$('button[aria-label="Send message"], button[mattooltip="Send"], .send-button')
-            if (sendBtn) {
-                await sendBtn.click()
-            } else {
+            try {
+                // Try to click send button with fallback
+                const clicked = await clickWithFallback(page, 'button[aria-label="Send message"], button[mattooltip="Send"], .send-button', 'gemini', 5000)
+                if (clicked) {
+                    return
+                }
+            } catch (e) {
+                console.warn('[BrowserLLM] Send button click failed:', e.message)
+                await takeDebugScreenshot(page, 'gemini', 'sendMessage-click-failed')
+            }
+
+            // Fallback: Cmd+Enter key combo
+            try {
                 await page.keyboard.down('Meta')
                 await page.keyboard.press('Enter')
                 await page.keyboard.up('Meta')
+            } catch (e) {
+                console.warn('[BrowserLLM] ❌ Cmd+Enter also failed:', e.message)
+                await takeDebugScreenshot(page, 'gemini', 'sendMessage-keyboard-failed')
+                throw new Error('Could not send message in Gemini', { cause: e })
             }
         },
         async waitForResponse(page, initialCount, timeout = 300000) {
-            console.log(`[BrowserLLM] Gemini waiting for response... (initial count: ${initialCount})`)
+            console.log(`[BrowserLLM] ⏳ Gemini waiting for response... (initial count: ${initialCount}, timeout: ${timeout}ms)`)
 
-            // Wait for new message element to appear
-            await page.waitForFunction((initial) => {
-                return document.querySelectorAll('message-content, .model-response-text').length > initial
-            }, { timeout, polling: 1000 }, initialCount).catch(() => console.log('Timeout waiting for Gemini new message element'))
+            // Step 1: Wait for new message element to appear
+            try {
+                console.log(`[BrowserLLM] Step 1: Waiting for new message element...`)
+                const startTime = Date.now()
+                await page.waitForFunction((initial) => {
+                    const count = document.querySelectorAll('message-content, .model-response-text').length
+                    return count > initial
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 }, initialCount)
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ New message detected in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for Gemini new message element: ${e.message}`)
+                await takeDebugScreenshot(page, 'gemini', 'waitForResponse-no-message')
+            }
 
             await sleep(3000)
 
-            // Wait for generation (spinner) to finish
-            await page.waitForFunction(() => {
-                const loading = document.querySelector('.loading-indicator, mat-progress-bar, .thinking-indicator, [data-test-id="generating-indicator"]')
-                return !loading
-            }, { timeout, polling: 1000 }).catch(() => console.log('Timeout waiting for Gemini stream to finish'))
+            // Step 2: Wait for generation (spinner) to finish
+            try {
+                console.log(`[BrowserLLM] Step 2: Waiting for generation to finish...`)
+                const startTime = Date.now()
+                await page.waitForFunction(() => {
+                    const loading = document.querySelector('.loading-indicator, mat-progress-bar, .thinking-indicator, [data-test-id="generating-indicator"]')
+                    return !loading
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 })
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ Generation finished in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for Gemini stream to finish: ${e.message}`)
+                await takeDebugScreenshot(page, 'gemini', 'waitForResponse-still-generating')
+            }
 
             await sleep(2000)
         },
@@ -285,6 +672,101 @@ const AI_DRIVERS = {
             return await page.evaluate(() => {
                 // Get fresh nodes directly from the DOM to avoid Detached Node errors
                 const msgs = document.querySelectorAll('message-content, .model-response-text, .response-content')
+                if (msgs.length === 0) return ''
+                return msgs[msgs.length - 1].innerText || msgs[msgs.length - 1].textContent || ''
+            })
+        },
+    },
+
+    grok: {
+        name: 'Grok',
+        emoji: '🏴‍☠️',
+        url: 'https://grok.com',
+        newChatUrl: 'https://grok.com',
+        async countResponses(page) {
+            return await page.evaluate(() => document.querySelectorAll('.message-row, .message').length)
+        },
+        async typePrompt(page, text) {
+            // Health check before attempting interaction
+            const health = await healthCheckPage(page, 'grok')
+            if (!health.healthy) {
+                throw new Error(`Grok page unhealthy: ${health.reason}`)
+            }
+
+            const selector = await getAdaptiveSelector(page.url(), {
+                hints: ['textarea[placeholder*="Ask Grok"]', 'textarea', '[contenteditable="true"]'],
+                fallback: 'textarea'
+            })
+
+            // Try native method first, fallback to CDP if times out
+            const success = await typeWithFallback(page, selector, text, 'grok', 15000)
+            if (!success) {
+                console.warn('[BrowserLLM] ❌ Grok typePrompt failed with both methods')
+                await takeDebugScreenshot(page, 'grok', 'typePrompt-failed')
+                throw new Error('Failed to type prompt in Grok after native and CDP attempts')
+            }
+        },
+        async sendMessage(page) {
+            try {
+                // Try send button with fallback
+                const clicked = await clickWithFallback(page, 'button[aria-label="Grok something"], button[type="submit"]', 'grok', 5000)
+                if (clicked) {
+                    return
+                }
+            } catch (e) {
+                console.warn('[BrowserLLM] Send button click failed:', e.message)
+                await takeDebugScreenshot(page, 'grok', 'sendMessage-click-failed')
+            }
+
+            // Fallback: press Enter
+            try {
+                await page.keyboard.press('Enter')
+            } catch (e) {
+                console.warn('[BrowserLLM] ❌ Enter key also failed:', e.message)
+                await takeDebugScreenshot(page, 'grok', 'sendMessage-keyboard-failed')
+                throw new Error('Could not send message in Grok', { cause: e })
+            }
+        },
+        async waitForResponse(page, initialCount, timeout = 300000) {
+            console.log(`[BrowserLLM] ⏳ Grok waiting for response... (initial count: ${initialCount}, timeout: ${timeout}ms)`)
+
+            // Step 1: Wait for new message element to appear
+            try {
+                console.log(`[BrowserLLM] Step 1: Waiting for new message element...`)
+                const startTime = Date.now()
+                await page.waitForFunction((initial) => {
+                    const count = document.querySelectorAll('.message-row, .message').length
+                    return count > initial
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 }, initialCount)
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ New message detected in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for Grok new message element: ${e.message}`)
+                await takeDebugScreenshot(page, 'grok', 'waitForResponse-no-message')
+            }
+
+            await sleep(3000)
+
+            // Step 2: Wait for streaming to complete (stop button disappears)
+            try {
+                console.log(`[BrowserLLM] Step 2: Waiting for generation to finish...`)
+                const startTime = Date.now()
+                await page.waitForFunction(() => {
+                    const stopBtn = document.querySelector('button[aria-label="Stop generating"]')
+                    return !stopBtn
+                }, { timeout: Math.min(timeout, 30000), polling: 1000 })
+                const elapsed = Date.now() - startTime
+                console.log(`[BrowserLLM] ✓ Generation finished in ${elapsed}ms`)
+            } catch (e) {
+                console.warn(`[BrowserLLM] ⚠️ Timeout waiting for Grok stream to finish: ${e.message}`)
+                await takeDebugScreenshot(page, 'grok', 'waitForResponse-still-generating')
+            }
+
+            await sleep(2000)
+        },
+        async extractResponse(page) {
+            return await page.evaluate(() => {
+                const msgs = document.querySelectorAll('.message-row .message, .message')
                 if (msgs.length === 0) return ''
                 return msgs[msgs.length - 1].innerText || msgs[msgs.length - 1].textContent || ''
             })
@@ -434,16 +916,22 @@ export async function sendToAI(aiId, prompt, options = {}, onProgress = null) {
  * Check which AIs are available (have open tabs with active sessions)
  */
 export async function checkAvailableAIs() {
-    if (!browser) return { connected: false, ais: {} }
+    if (!browser) {
+        const error = '[CRITICAL] Browser not connected. Call connectToChrome() first.'
+        console.error(`[BrowserLLM] ${error}`)
+        throw new Error(error)
+    }
 
     const allPages = await browser.pages()
     const available = {}
+    let foundCount = 0
 
     for (const [id, driver] of Object.entries(AI_DRIVERS)) {
         const hostname = new URL(driver.url).hostname
         const found = allPages.some(p => {
             try { return p.url().includes(hostname) } catch { return false }
         })
+        if (found) foundCount++
         available[id] = {
             name: driver.name,
             emoji: driver.emoji,
@@ -451,6 +939,27 @@ export async function checkAvailableAIs() {
         }
     }
 
+    // CRITICAL VALIDATION: If NO LLM tabs found, throw explicit error
+    if (foundCount === 0) {
+        const error = '[CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222'
+        console.error(`[BrowserLLM] ${error}`)
+        console.error(`[BrowserLLM] Total de abas abertas: ${allPages.length}`)
+        console.error(`[BrowserLLM] Abas esperadas: chatgpt.com, claude.ai, gemini.google.com, grok.com`)
+
+        // Log first 10 tab URLs for debugging
+        console.error(`[BrowserLLM] URLs abertas:`)
+        allPages.slice(0, 10).forEach((p, idx) => {
+            try {
+                console.error(`  [${idx}] ${p.url().substring(0, 80)}`)
+            } catch (e) {
+                console.error(`  [${idx}] <página inacessível>`)
+            }
+        })
+
+        throw new Error(error)
+    }
+
+    console.log(`[BrowserLLM] ✓ Abas de LLM detectadas: ${foundCount}/4 agentes disponíveis`)
     return { connected: true, ais: available }
 }
 
