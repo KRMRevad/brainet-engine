@@ -50,7 +50,7 @@ export default {
     // Workspace paths (must be set via environment variable)
     workspace: process.env.WORKSPACE_PATH,
     agents: {
-        promptDir: process.env.PROMPTS_PATH || 'templates/estrutural/0 Workflow e Agentes',
+        promptDir: process.env.PROMPTS_PATH || './server/prompts',
         promptFiles: {
             1: '1_PESQUISA_PROFUNDA_V2.md',
             2: '2_EXTRACAO_CONHECIMENTO_V2.md',

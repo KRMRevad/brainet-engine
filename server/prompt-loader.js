@@ -37,20 +37,11 @@ export async function loadAgentPrompt(agentId) {
         throw new Error(`No prompt file configured for agent: ${agentId}`)
     }
 
-    // Try local prompts first (from server/prompts), then fall back to workspace
-    const isLocalPromptsPath = process.env.PROMPTS_PATH || false
-    let promptPath
-
-    if (isLocalPromptsPath) {
-        // Use PROMPTS_PATH from env (typically ./server/prompts)
-        const promptsDir = path.isAbsolute(config.agents.promptDir)
-            ? config.agents.promptDir
-            : path.resolve(process.cwd(), config.agents.promptDir)
-        promptPath = path.join(promptsDir, filename)
-    } else {
-        // Fall back to workspace path (original behavior during transition)
-        promptPath = path.join(config.workspace, 'templates/estrutural/0 Workflow e Agentes', filename)
-    }
+    // Load from configured prompts directory (server/prompts by default)
+    const promptsDir = path.isAbsolute(config.agents.promptDir)
+        ? config.agents.promptDir
+        : path.resolve(process.cwd(), config.agents.promptDir)
+    const promptPath = path.join(promptsDir, filename)
 
     try {
         const raw = await fs.readFile(promptPath, 'utf-8')
