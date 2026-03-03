@@ -1,5 +1,86 @@
 [
   {
+    "id": "job_1772316600279_3x40hb",
+    "status": "complete",
+    "createdAt": "2026-02-28T22:10:00.279Z",
+    "updatedAt": "2026-02-28T22:10:41.604Z",
+    "input": {
+      "nichoId": "espiritualidade",
+      "nichoNome": "Espiritualidade",
+      "subtema": null,
+      "formato": null,
+      "angulo": "<img src=x onerror=\"alert(1)\">"
+    },
+    "currentAgent": 6,
+    "agents": {
+      "1": {
+        "status": "error",
+        "startedAt": "2026-02-28T22:10:00.281Z",
+        "completedAt": "2026-02-28T22:10:00.284Z",
+        "outputLength": 0
+      },
+      "2": {
+        "status": "error",
+        "startedAt": "2026-02-28T22:10:00.284Z",
+        "completedAt": "2026-02-28T22:10:00.286Z",
+        "outputLength": 0
+      },
+      "3": {
+        "status": "error",
+        "startedAt": "2026-02-28T22:10:00.286Z",
+        "completedAt": "2026-02-28T22:10:00.287Z",
+        "outputLength": 0
+      },
+      "5": {
+        "status": "error",
+        "startedAt": "2026-02-28T22:10:00.288Z",
+        "completedAt": "2026-02-28T22:10:34.779Z",
+        "outputLength": 0
+      },
+      "6": {
+        "status": "error",
+        "startedAt": "2026-02-28T22:10:36.168Z",
+        "completedAt": "2026-02-28T22:10:40.422Z",
+        "outputLength": 0
+      }
+    },
+    "outputs": {
+      "1": "[ERROR] [CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+      "2": "[ERROR] [CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+      "3": "[ERROR] [CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+      "5": "[ERROR] Attempted to use detached Frame '62BE2D61B503171C7F2F8A5B92199CB0'.",
+      "6": "[ERROR] [CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222"
+    },
+    "errors": [
+      {
+        "timestamp": "2026-02-28T22:10:00.284Z",
+        "message": "[CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+        "agent": 1
+      },
+      {
+        "timestamp": "2026-02-28T22:10:00.286Z",
+        "message": "[CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+        "agent": 2
+      },
+      {
+        "timestamp": "2026-02-28T22:10:00.288Z",
+        "message": "[CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+        "agent": 3
+      },
+      {
+        "timestamp": "2026-02-28T22:10:34.784Z",
+        "message": "Attempted to use detached Frame '62BE2D61B503171C7F2F8A5B92199CB0'.",
+        "agent": 5
+      },
+      {
+        "timestamp": "2026-02-28T22:10:41.588Z",
+        "message": "[CRITICAL] Nenhuma aba de LLM conectada. Verifique as URLs no Chrome da porta 9222",
+        "agent": 6
+      }
+    ],
+    "duration": "41.3s"
+  },
+  {
     "id": "job_1771614173655_n2zkd2",
     "status": "failed",
     "createdAt": "2026-02-20T19:02:53.655Z",

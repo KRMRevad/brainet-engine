@@ -64,6 +64,7 @@ export function sanitizeInput(str, maxLen = 500) {
   if (typeof str !== 'string') return ''
 
   // Remove control characters except newline and tab
+  // eslint-disable-next-line no-control-regex
   let sanitized = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
 
   // Truncate to max length

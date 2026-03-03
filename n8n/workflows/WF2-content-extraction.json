@@ -1,0 +1,233 @@
+{
+  "name": "WF2: Council Markdown → ElevenLabs TTS → audio.mp3",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/webhook/council-phase2",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "httpMethod": "POST"
+      },
+      "name": "Webhook: Listen for Council Output",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 100],
+      "webhookId": "council-tts-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract job data from webhook payload\nconst jobId = $input.first().json.jobId;\nconst markdown = $input.first().json.resultado_capitao;\n\nif (!markdown) {\n  throw new Error('No resultado_capitao found in payload');\n}\n\n// Clean Markdown: Remove headers, bullets, convert to narrative prose\nconst cleanText = markdown\n  .split('\\n')\n  .filter(line => !line.match(/^#+\\s/) && line.trim()) // Remove headers\n  .filter(line => !line.match(/^-\\s/) && line.trim()) // Remove bullets\n  .map(line => line.trim())\n  .join(' ')\n  .replace(/\\s+/g, ' ') // Normalize spaces\n  .slice(0, 5000); // Limit to 5000 chars (ElevenLabs token limit)\n\nreturn {\n  jobId,\n  originalMarkdown: markdown,\n  cleanText: cleanText,\n  charCount: cleanText.length\n};"
+      },
+      "name": "Function: Clean Markdown → Narrative Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/{{ $env.ELEVENLABS_VOICE_ID }}",
+        "authentication": "genericCredentialType",
+        "genericCredentialType": {
+          "authentication": "headerAuth",
+          "credentialsExpired": false,
+          "headerAuth": {
+            "name": "xi-api-key",
+            "value": "={{ $env.ELEVENLABS_API_KEY }}"
+          }
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "text",
+            "value": "={{ $node['Function: Clean Markdown → Narrative Text'].json.cleanText }}"
+          },
+          {
+            "name": "voice_settings",
+            "value": "{\n  \"stability\": 0.7,\n  \"similarity_boost\": 0.75\n}"
+          },
+          {
+            "name": "model_id",
+            "value": "eleven_monolingual_v1"
+          }
+        ],
+        "options": {
+          "rawBodyContent": true,
+          "bodyContentType": "application/json"
+        }
+      },
+      "name": "HTTP: Call ElevenLabs TTS API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/storage/upload",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "bucket",
+            "value": "council-audio"
+          },
+          {
+            "name": "filename",
+            "value": "={{ $node['Function: Clean Markdown → Narrative Text'].json.jobId }}.mp3"
+          },
+          {
+            "name": "data",
+            "value": "={{ $node['HTTP: Call ElevenLabs TTS API'].json }}"
+          },
+          {
+            "name": "mimeType",
+            "value": "audio/mpeg"
+          }
+        ]
+      },
+      "name": "HTTP: Upload to Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/council/{{ $node['Function: Clean Markdown → Narrative Text'].json.jobId }}/phase2/audio",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "httpMethod": "PUT",
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "audioUrl",
+            "value": "={{ $node['HTTP: Upload to Supabase Storage'].json.signedUrl }}"
+          }
+        ]
+      },
+      "name": "HTTP: Update Supabase (audio_url + fase2_status)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/notification",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "jobId",
+            "value": "={{ $node['Function: Clean Markdown → Narrative Text'].json.jobId }}"
+          },
+          {
+            "name": "status",
+            "value": "audio_complete"
+          },
+          {
+            "name": "audioUrl",
+            "value": "={{ $node['HTTP: Upload to Supabase Storage'].json.signedUrl }}"
+          }
+        ]
+      },
+      "name": "Send Notification: Audio Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 100]
+    }
+  ],
+  "connections": {
+    "Webhook: Listen for Council Output": {
+      "main": [
+        [
+          {
+            "node": "Function: Clean Markdown → Narrative Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Clean Markdown → Narrative Text": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Call ElevenLabs TTS API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Call ElevenLabs TTS API": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Upload to Supabase Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Upload to Supabase Storage": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Update Supabase (audio_url + fase2_status)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Update Supabase (audio_url + fase2_status)": {
+      "main": [
+        [
+          {
+            "node": "Send Notification: Audio Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "timezone": "America/Sao_Paulo",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    "phase-2",
+    "content-generation",
+    "tts",
+    "elevenlabs"
+  ]
+}

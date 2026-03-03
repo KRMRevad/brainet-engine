@@ -145,13 +145,15 @@ export async function checkLLMHealth() {
         }
 
         if (provider === 'openai') {
-            return { ok: !!config.llm.openaiKey, provider, model: config.llm.model }
+            // SYS-23: Do NOT expose model names in public health endpoint
+            return { ok: !!config.llm.openaiKey, provider }
         }
 
         if (provider === 'anthropic') {
-            return { ok: !!config.llm.anthropicKey, provider, model: config.llm.model }
+            // SYS-23: Do NOT expose model names in public health endpoint
+            return { ok: !!config.llm.anthropicKey, provider }
         }
     } catch (e) {
-        return { ok: false, provider, error: e.message }
+        return { ok: false, provider, error: 'LLM unavailable' }
     }
 }
