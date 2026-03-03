@@ -11,7 +11,7 @@ import path from 'path'
 
 let browser = null
 let pages = {}
-const DEBUG_SCREENSHOTS_DIR = '/tmp/brainet-debug-screenshots'
+const DEBUG_SCREENSHOTS_DIR = process.env.DEBUG_SCREENSHOTS_DIR || '/tmp/brainet-debug-screenshots'
 
 // Ensure debug directory exists (IIFE)
 ;(async () => {
