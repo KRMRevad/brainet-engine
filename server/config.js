@@ -72,9 +72,8 @@ export default {
         heavyAgents: [1, 2, 3, 6],
     },
 
-    // Job queue
+    // Job queue (Supabase-only, no JSON fallback)
     jobs: {
-        dbPath: path.join(__dirname, 'data', 'jobs.json'),
         outputDir: 'execution/pipeline-outputs',
     },
 
