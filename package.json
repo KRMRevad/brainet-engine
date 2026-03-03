@@ -13,6 +13,8 @@
     "restart:pm2": "pm2 restart brainet-server",
     "logs:pm2": "pm2 logs brainet-server",
     "chrome": "open -n -a 'Google Chrome' --args --remote-debugging-port=9225 --user-data-dir=\"$HOME/.brainet-chrome\"",
+    "chrome:debug": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9225 --user-data-dir=/tmp/chrome-debug-profile --new-window &",
+    "infra:check": "bash infra-check.sh",
     "lint": "eslint src/ server/",
     "test": "vitest",
     "test:ui": "vitest --ui",

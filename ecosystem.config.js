@@ -31,11 +31,11 @@ module.exports = {
             // --- ENVIRONMENT ---
             env: {
                 NODE_ENV: 'production',
-                PORT: 3001,
+                PORT: 3000,
             },
             env_development: {
                 NODE_ENV: 'development',
-                PORT: 3001,
+                PORT: 3000,
             },
 
             // --- LOGGING ---
@@ -68,6 +68,22 @@ module.exports = {
 
     // --- DEPLOYMENT TARGETS ---
     deploy: {
+        local: {
+            user: 'kreligar3vad',
+            host: 'localhost',
+            ref: 'origin/feature/qa-compliance-and-resolver',
+            repo: 'file:///Users/kreligar3vad/Documents/Workspace/apps/engine BRAINET',
+            path: '/Users/kreligar3vad/Documents/Workspace/apps/engine BRAINET',
+            'post-deploy': 'npm install && npm run build',
+        },
+        alienware: {
+            user: 'root',
+            host: '100.66.114.87',
+            ref: 'origin/feature/qa-compliance-and-resolver',
+            repo: 'https://github.com/your-org/brainet.git',
+            path: '/home/brainet',
+            'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
+        },
         production: {
             user: 'deploy',
             host: 'your-production-server.com',
@@ -75,14 +91,6 @@ module.exports = {
             repo: 'git@github.com:your-org/brainet.git',
             path: '/var/www/brainet',
             'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
-        },
-        staging: {
-            user: 'deploy',
-            host: 'your-staging-server.com',
-            ref: 'origin/develop',
-            repo: 'git@github.com:your-org/brainet.git',
-            path: '/var/www/brainet-staging',
-            'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env development',
         },
     },
 }
