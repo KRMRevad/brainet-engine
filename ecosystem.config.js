@@ -72,8 +72,8 @@ module.exports = {
             user: 'kreligar3vad',
             host: 'localhost',
             ref: 'origin/feature/qa-compliance-and-resolver',
-            repo: 'file:///Users/kreligar3vad/Documents/Workspace/apps/engine BRAINET',
-            path: '/Users/kreligar3vad/Documents/Workspace/apps/engine BRAINET',
+            repo: 'file:///Users/kreligar3vad/Documents/Workspace/apps/brainet',
+            path: '/Users/kreligar3vad/Documents/Workspace/apps/brainet',
             'post-deploy': 'npm install && npm run build',
         },
         alienware: {

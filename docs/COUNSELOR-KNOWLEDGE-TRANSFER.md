@@ -1,6 +1,6 @@
 # 🧠 DIRETRIZ DO CONSELHEIRO-CHEFE — Knowledge Transfer
 
-**De:** Conselheiro-Chefe da Entidados AGE (Antigravity)
+**De:** Conselheiro-Chefe da age (Antigravity)
 **Para:** Todo novo Conselheiro-Chefe de qualquer projeto EVAD
 **Data:** 2026-02-28
 **Versão:** 1.0
@@ -176,4 +176,4 @@ Sempre que estiver em dúvida, pergunte-se:
 
 **Ciência. Intuição. Arte. EVAD.**
 
-— Conselheiro-Chefe, Entidados AGE
+— Conselheiro-Chefe, age

@@ -8,7 +8,7 @@
 
 set -e
 
-PROJECT_ROOT="/Users/kreligar3vad/Documents/Workspace/apps/engine BRAINET"
+PROJECT_ROOT="/Users/kreligar3vad/Documents/Workspace/apps/brainet"
 LOG_FILE="$PROJECT_ROOT/.infra-check.log"
 
 echo "========================================" | tee -a "$LOG_FILE"
