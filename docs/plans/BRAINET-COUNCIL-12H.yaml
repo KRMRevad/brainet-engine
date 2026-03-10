@@ -1,0 +1,415 @@
+storyId: BRAINET-COUNCIL-12H
+createdAt: '2026-02-26T20:00:00-03:00'
+createdBy: '@architect (Aria)'
+status: pending
+complexity: COMPLEX
+estimatedEffort: '12 hours (2 phases of 6h each)'
+
+description: |
+  Council BRAINET: A 12-hour sprint to implement a multi-LLM orchestration system
+  (Phase 1) + content generation pipeline (Phase 2). Zero-cost architecture using
+  browser automation + OpenClaw fallback + Scrapling for adaptive element tracking.
+
+dependencies:
+  - name: puppeteer-core
+    version: '^23.0.0'
+    purpose: 'Chrome CDP automation (already installed)'
+
+  - name: scrapling
+    version: 'latest'
+    purpose: 'Smart element tracking + Cloudflare bypass (Alienware)'
+
+  - name: '@supabase/supabase-js'
+    version: '^2.38.0'
+    purpose: 'Database client for state machine + tracking'
+
+  - name: n8n
+    version: '1.55.0'
+    purpose: 'Workflow orchestration for Phase 2'
+
+  - name: elevenlabs
+    version: '^0.2.19'
+    purpose: 'Text-to-speech API (Phase 2)'
+
+infrastructure:
+  dev_network: 'Mac + Alienware via Tailscale (6ms latency)'
+  mac_services:
+    - puppeteer-core (Chrome CDP via port 9225)
+    - OpenClaw container (molt-mac, ports 18789-18790)
+    - Scrapling Python venv (~/.scrapling-venv/)
+  alienware_services:
+    - Ollama (gpt-oss:20b on port 11434)
+    - n8n (port 5678)
+    - Scrapling MCP server (fallback fetch)
+
+---
+
+phases:
+  - id: phase-1
+    name: 'Council Implementation (6h)'
+    description: 'Implement multi-LLM orchestration with state machine, browser automation, and fallback cascade'
+
+    subtasks:
+      # Setup phase (1.1-1.4) — ~1.5h total
+      - id: '1.1'
+        description: 'Setup Scrapling MCP on Alienware and validate local installation'
+        service: infra
+        files:
+          - 'server/config/scrapling.js'
+          - '.env.example'
+        verification:
+          type: command
+          command: 'curl -s http://100.66.114.87:3000/health | grep -q "scrapling" && echo OK'
+        status: pending
+        timeEstimate: 20min
+        notes: |
+          Activate Scrapling MCP server on Alienware.
+          Verify fingerprint spoofing + element tracking works.
+          Test batchScrape() with 3 URLs (concurrent_requests=3).
+
+      - id: '1.2'
+        description: 'Integrate Puppeteer CDP with Scrapling MCP via HTTP for adaptive element tracking'
+        service: backend
+        files:
+          - 'server/llm/browser-llm.js'
+          - 'server/llm/browser-config.js'
+        verification:
+          type: command
+          command: 'npm test -- --grep "BrowserLLM" && npm run typecheck'
+        status: pending
+        timeEstimate: 60min
+        dependencies: ['1.1']
+        notes: |
+          Architecture: Node.js → HTTP request to Scrapling MCP (Alienware)
+                       → receive adaptive selectors → Puppeteer applies
+
+          Flow:
+          1. For each tab, call Scrapling MCP: POST http://ALIENWARE:3000/find-element
+             { selectors: ['#prompt-textarea', '#chat-input', ...], adaptive: true }
+          2. Receive: { selector: '.actual-selector-found', confidence: 0.95 }
+          3. Apply in Puppeteer: await page.$(foundSelector)
+          4. Type prompt, capture response
+          5. Call Scrapling again: POST /extract-content { selector: '.response', adaptive: true }
+          6. Fallback to OpenClaw on timeout (60s per tab)
+
+          Tabs: claude.ai, gemini.google.com, chatgpt.com, grok.x.ai
+
+      - id: '1.3'
+        description: 'Create council-orchestrator.js with state machine + parallelization'
+        service: backend
+        files:
+          - 'server/council/council-orchestrator.js'
+          - 'server/council/state-machine.js'
+        verification:
+          type: command
+          command: 'npm test -- --grep "CouncilOrchestrator" && npm run typecheck'
+        status: pending
+        timeEstimate: 75min
+        dependencies: ['1.2']
+        notes: |
+          State transitions: queued → routing → processing → synthesizing → complete
+          Router: Load pesos por objetivo (pesquisa, estrategia, criacao, etc)
+          Fan-out: Parallelizar Pesq, Vision, Desaf (serialized typing, parallel processing)
+          Síntese: Capitão aguarda todos/timeout(60s) → sintetiza
+          Fallback: Se Chrome cai, usa OpenClaw; se OpenClaw cai, pula agente
+
+      - id: '1.4'
+        description: 'Create Supabase schema (003_council_jobs.sql) with JSONB tracking'
+        service: database
+        files:
+          - 'supabase/migrations/003_council_jobs.sql'
+          - 'server/db/council-repo.js'
+        verification:
+          type: api
+          url: 'http://localhost:3000/api/health/db'
+          expectedStatus: 200
+        status: pending
+        timeEstimate: 30min
+        dependencies: ['1.3']
+        notes: |
+          Table: council_jobs (id, status, resultado_pesquisador, resultado_visionario,
+          resultado_desafiador, resultado_capitao, fase2_status, audio_url, video_url)
+          State machine: queued/routing/processing/synthesizing/complete/error/timeout
+
+      # API & Integration (1.5-1.6) — ~1.5h total
+      - id: '1.5'
+        description: 'Implement 3 endpoints: POST /api/council/job, GET /api/council/:id, GET /api/council/jobs'
+        service: backend
+        files:
+          - 'server/api/council-routes.js'
+          - 'server/middleware/council-validation.js'
+        verification:
+          type: api
+          url: 'http://localhost:3000/api/council/jobs'
+          expectedStatus: 200
+        status: pending
+        timeEstimate: 45min
+        dependencies: ['1.4']
+        notes: |
+          POST /api/council/job
+            Body: { tema, contexto, objetivo, profundidade, fontes[], restricoes, metadados }
+            Returns: { jobId, status: "queued" }
+
+          GET /api/council/:jobId
+            Returns: { status, resultado_pesquisador, resultado_visionario,
+                      resultado_desafiador, resultado_capitao, fase2_status }
+
+      - id: '1.6'
+        description: 'Write system prompts for 4 council roles (Capitão, Pesquisador, Visionário, Desafiador)'
+        service: backend
+        files:
+          - 'server/prompts/capitao.prompt.md'
+          - 'server/prompts/pesquisador.prompt.md'
+          - 'server/prompts/visionario.prompt.md'
+          - 'server/prompts/desafiador.prompt.md'
+        verification:
+          type: command
+          command: 'grep -q "system" server/prompts/*.prompt.md && echo OK'
+        status: pending
+        timeEstimate: 30min
+        dependencies: ['1.5']
+        notes: |
+          Each prompt:
+          - Role definition (Capitão=juiz, Pesq=buscador, Vision=inovador, Desaf=questionador)
+          - Instructions for input parsing
+          - Output format (Markdown structured)
+          - Tone + style (executivo, técnico, etc)
+
+      # Testing (1.7) — ~1h total
+      - id: '1.7'
+        description: 'E2E test: Send 1 job with 3 fontes, verify all 4 agentes responderam corretamente'
+        service: frontend
+        files:
+          - 'tests/e2e/council.spec.ts'
+          - 'tests/fixtures/council-input.json'
+        verification:
+          type: e2e
+          testFile: 'tests/e2e/council.spec.ts'
+          command: 'npm run test:e2e -- --grep "Council"'
+        status: pending
+        timeEstimate: 60min
+        dependencies: ['1.6']
+        notes: |
+          Test steps:
+          1. POST /api/council/job with tema + fontes
+          2. Poll GET /api/council/:jobId until status=complete (timeout 10min)
+          3. Verify resultado_pesquisador, visionario, desafiador, capitao exist
+          4. Verify Markdown structure (## Síntese do Conselho, etc)
+          5. Verify fontes are cited
+
+          Debug: Check Supabase logs if any agente fails
+
+---
+
+  - id: phase-2
+    name: 'Content Generation Pipeline (6h)'
+    description: 'Transform Council output (Markdown) → Text+Audio+Visuals via n8n + Google APIs'
+
+    subtasks:
+      # n8n Workflows (2.1-2.3) — ~3h total
+      - id: '2.1'
+        description: 'Create n8n WF2: Council Markdown → clean text + ElevenLabs TTS → audio.mp3'
+        service: backend
+        files:
+          - 'n8n/workflows/WF2-content-extraction.json'
+          - 'server/content/text-cleaner.js'
+        verification:
+          type: api
+          url: 'http://100.66.114.87:5678/api/v1/workflows'
+          expectedStatus: 200
+        status: pending
+        timeEstimate: 75min
+        dependencies: ['1.7']
+        notes: |
+          n8n nodes:
+          1. Trigger: Webhook from Council (resultado_capitao)
+          2. Text Cleaner: Remove headers/bullets, convert Markdown → prose
+          3. ElevenLabs: Call TTS API (voice_id, stability=0.7)
+          4. Save: Store audio_url in Supabase (fase2_status=audio_complete)
+
+          Env vars: ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID
+
+      - id: '2.2'
+        description: 'Create n8n WF3a: Tema + keywords → Google Whisk (Imagen 3) → 3-5 imagens'
+        service: backend
+        files:
+          - 'n8n/workflows/WF3a-image-generation.json'
+          - 'server/content/whisk-bridge.js'
+        verification:
+          type: api
+          url: 'http://localhost:3000/api/content/images/status'
+          expectedStatus: 200
+        status: pending
+        timeEstimate: 75min
+        dependencies: ['2.1']
+        notes: |
+          n8n nodes:
+          1. Parse Council output → extract tema + 3-5 keywords
+          2. Generate Whisk prompts: "Tema: X, estilo artístico, autenticidade de marca"
+          3. Call Google Whisk via Gemini Advanced (assinatura!)
+          4. Download imagens → S3 or Supabase Storage
+          5. Update Supabase: images_urls[]
+
+          Integration: Whisk é web UI — pode usar OpenClaw para automate,
+          ou usar Imagen API direta (se disponível)
+
+      - id: '2.3'
+        description: 'Create n8n WF3b: Audio + Imagens → Google Flow (Veo 3.1) → video.mp4'
+        service: backend
+        files:
+          - 'n8n/workflows/WF3b-video-generation.json'
+          - 'server/content/flow-bridge.js'
+        verification:
+          type: command
+          command: 'ffmpeg -i test.mp4 -f null - && echo OK'
+        status: pending
+        timeEstimate: 75min
+        dependencies: ['2.2']
+        notes: |
+          n8n nodes:
+          1. Get audio_url + images_urls[] from Supabase
+          2. Prepare Flow input: audio track + image sequence
+          3. Call Google Flow (Veo 3.1) via Gemini Advanced
+          4. Monitor generation (can take 5-10min)
+          5. Download video → S3
+          6. Update Supabase: video_url, fase2_status=complete
+
+          Fallback: Se Flow indisponível, usar CapCut CLI (local) como backup
+
+      # Storage & Tracking (2.4-2.5) — ~1.5h total
+      - id: '2.4'
+        description: 'Setup Supabase Storage buckets + signed URLs for audio/images/video (fase2_status already in 003_council_jobs.sql)'
+        service: infra
+        files:
+          - 'supabase/migrations/004_storage_buckets.sql'
+          - 'server/storage/cdn-config.js'
+          - 'server/db/council-repo.js'
+        verification:
+          type: api
+          url: 'http://localhost:3000/api/storage/health'
+          expectedStatus: 200
+        status: pending
+        timeEstimate: 75min
+        dependencies: ['2.3']
+        notes: |
+          Create Supabase Storage buckets:
+          - council-audio (audio.mp3) — 500MB max
+          - council-images (*.png) — 500MB max
+          - council-videos (*.mp4) — 5GB max
+
+          Signed URLs: 7-day expiry, public read via CDN
+          CDN: Via Supabase CDN or Cloudflare
+
+          Update council-repo.js with helpers:
+          - setAudioUrl(jobId, url) → updates audio_url + fase2_status
+          - setImageUrls(jobId, urls) → updates images_urls[]
+          - setVideoUrl(jobId, url) → updates video_url + fase2_status=complete
+
+          Note: 003_council_jobs.sql already includes:
+          - fase2_status (enum: pending|audio_processing|audio_complete|...)
+          - audio_url, images_urls[], video_url columns
+          - No ALTER TABLE needed
+
+      # E2E Test (2.5) — ~1h total
+      - id: '2.5'
+        description: 'E2E test: 1 conselho input → texto+áudio+imagens+vídeo sai completo'
+        service: frontend
+        files:
+          - 'tests/e2e/content-pipeline.spec.ts'
+          - 'tests/fixtures/content-pipeline-input.json'
+        verification:
+          type: e2e
+          testFile: 'tests/e2e/content-pipeline.spec.ts'
+          command: 'npm run test:e2e -- --grep "ContentPipeline"'
+        status: pending
+        timeEstimate: 60min
+        dependencies: ['2.4']
+        notes: |
+          Full flow test:
+          1. POST /api/council/job (tema="Tendências IA 2026")
+          2. Poll until fase2_status=complete (timeout 30min)
+          3. Verify audio_url exists + downloadable
+          4. Verify images_urls[] has 3-5 items
+          5. Verify video_url exists + playable
+          6. Verify all URLs are signed + expire correctly
+
+          Performance target: Full flow < 30min (5 subtasks parallel where possible)
+
+---
+
+## Integration Points
+
+| Component | Port | Status |
+|-----------|------|--------|
+| Chrome CDP | 9225 | User's local (must run: chrome --remote-debugging-port=9225) |
+| Mac OpenClaw | 18789-18790 | Running via LaunchAgent (molt-mac container) |
+| Alienware Ollama | 11434 | Running (gpt-oss:20b model loaded) |
+| Alienware n8n | 5678 | Running (Docker) |
+| Supabase | API | Must configure .env (SUPABASE_URL, SUPABASE_KEY) |
+
+---
+
+## Risk Assessment
+
+| Risk | Mitigation | Effort |
+|------|-----------|--------|
+| Chrome UI changes break seletores | Scrapling adaptive tracking | Built-in (1.1) |
+| LLM API timeout (60s) | OpenClaw fallback + synthesis with partial results | Design (1.3) |
+| n8n workflow slow | Parallel n8n instances, queue throttling | Config (2.1-2.3) |
+| Scrapling fetch blocks | Rotate IPs, increase timeout, use residential proxy | .env var (1.1) |
+
+---
+
+## Success Criteria
+
+**Phase 1 Complete When:**
+- ✅ All 4 LLM tabs respond to council job
+- ✅ State machine transitions properly (queued → complete)
+- ✅ Supabase tracks cada agente's resposta
+- ✅ E2E test passes with 3 exemplos diferentes
+
+**Phase 2 Complete When:**
+- ✅ Conselho output (Markdown) → audio.mp3 (ElevenLabs)
+- ✅ Tema keywords → 3-5 imagens (Google Whisk)
+- ✅ Audio + imagens → video.mp4 (Google Flow)
+- ✅ All assets signed-URL'd + expire properly
+- ✅ E2E test completes full flow < 30min
+
+---
+
+## Notes for Developer (@dev)
+
+- **Session persistence:** Keep Chrome logado em todas as 4 ABAs durante toda a Fase 1
+- **Error logs:** Check `server/logs/council.log` se agente não responde
+- **Scrapling debug:** `curl -X POST http://100.66.114.87:3000/scrape -d '{"url":"...","stealth":true}'`
+- **n8n test:** Use "Test" botão em cada node antes de Deploy workflow
+- **Timeout tuning:** Se LLMs lentos, ajuste `BROWSER_TIMEOUT_MS` em `.env` (padrão: 60000ms)
+
+---
+
+## Timeline
+
+```
+Phase 1 (6h):
+  1.1-1.4 Setup: 2h 25min
+  1.5-1.6 API+Prompts: 1h 15min
+  1.7 Testing: 1h
+  Buffer: 1h 20min
+  ──────────────────
+  Total: 6h
+
+Phase 2 (6h):
+  2.1-2.3 n8n Workflows: 3h 45min
+  2.4 Storage+Tracking (consolidated): 1h 15min
+  2.5 E2E Test: 1h
+  ──────────────────
+  Total: 6h
+
+TOTAL SPRINT: 12h (12 subtasks, consolidated from 13)
+```
+
+---
+
+**Created by:** @architect (Aria)
+**Date:** 2026-02-26
+**Status:** Pending Approval

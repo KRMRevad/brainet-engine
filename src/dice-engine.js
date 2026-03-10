@@ -5,9 +5,17 @@
  */
 
 import nichosData from '../data/nichos.json'
+import { API_BASE } from './config.js'
 
 // --- STATE ---
 let explorationHistory = JSON.parse(localStorage.getItem('brainet_history') || '[]')
+let sessionId = localStorage.getItem('brainet_session_id')
+
+// Initialize session ID if not present
+if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    localStorage.setItem('brainet_session_id', sessionId)
+}
 
 /**
  * Roll the dice — select a random niche weighted by exploration frequency.
@@ -35,13 +43,24 @@ export function rollDice() {
         }
     }
 
-    // Log exploration
+    // Log exploration locally
     const entry = {
         nichoId: selected.id,
         timestamp: new Date().toISOString(),
     }
     explorationHistory.push(entry)
     localStorage.setItem('brainet_history', JSON.stringify(explorationHistory))
+
+    // Send to server for database logging (T7)
+    fetch(`${API_BASE}/api/exploration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            nichoId: selected.id,
+            sessionId,
+            userAgent: navigator.userAgent,
+        }),
+    }).catch(err => console.warn('[DiceEngine] Failed to log exploration:', err.message))
 
     return selected
 }
@@ -119,11 +138,17 @@ export function countAngulos(nicho) {
 /**
  * Get total stats for the entire taxonomy
  */
-export function getTaxonomyStats() {
+/**
+ * Get taxonomy statistics
+ * - Counts: nichos, subtemas, formatos, angulos
+ * - Explorations: from localStorage (fallback) or fetches from server (T7)
+ */
+export async function getTaxonomyStats() {
     const nichos = nichosData.nichos
     let totalSubtemas = 0
     let totalFormatos = 0
     let totalAngulos = 0
+    let explorations = explorationHistory.length // Local fallback
 
     nichos.forEach(n => {
         totalSubtemas += n.subtemas.length
@@ -135,12 +160,25 @@ export function getTaxonomyStats() {
         })
     })
 
+    // Try to fetch exploration stats from server (T7)
+    try {
+        const response = await fetch(`${API_BASE}/api/exploration/stats`)
+        if (response.ok) {
+            const data = await response.json()
+            // Sum all stats from the server
+            explorations = Object.values(data.stats).reduce((a, b) => a + b, 0)
+        }
+    } catch (e) {
+        console.warn('[DiceEngine] Failed to fetch exploration stats from server:', e.message)
+        // Fall back to localStorage count
+    }
+
     return {
         nichos: nichos.length,
         subtemas: totalSubtemas,
         formatos: totalFormatos,
         angulos: totalAngulos,
-        explorations: explorationHistory.length
+        explorations
     }
 }
 

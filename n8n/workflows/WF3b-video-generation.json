@@ -1,0 +1,328 @@
+{
+  "name": "WF3b: Audio + images → Google Flow (Veo 3.1) → video.mp4",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/webhook/council-phase2-video",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "httpMethod": "POST"
+      },
+      "name": "Webhook: Listen for Video Generation Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 100],
+      "webhookId": "council-video-webhook"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/council/{{ $input.first().json.jobId }}",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        }
+      },
+      "name": "HTTP: Fetch Council Job (audio_url + images_urls)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Validate assets are ready\nconst job = $input.first().json;\n\nif (!job.audio_url) {\n  throw new Error('Audio not ready (audio_url missing)');\n}\n\nif (!job.images_urls || job.images_urls.length === 0) {\n  throw new Error('Images not ready (images_urls missing)');\n}\n\nreturn {\n  jobId: job.id,\n  tema: job.tema,\n  audio_url: job.audio_url,\n  image_urls: job.images_urls,\n  image_count: job.images_urls.length,\n  fase2_status: job.fase2_status,\n  ready: true\n};"
+      },
+      "name": "Function: Validate Assets Ready",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Prepare video generation request\nconst job = $input.first().json;\nconst imageUrls = job.image_urls;\nconst audioUrl = job.audio_url;\n\n// Create image sequence (keyframes)\nconst keyframes = imageUrls.map((url, idx) => ({\n  image_url: url,\n  duration_seconds: Math.round(job.audio_duration / imageUrls.length || 3),\n  index: idx\n}));\n\n// Build Flow request\nreturn {\n  jobId: job.jobId,\n  tema: job.tema,\n  video_request: {\n    model: 'Veo 3.1',\n    audio_track: {\n      url: audioUrl,\n      track: 'narration'\n    },\n    visual_track: {\n      keyframes: keyframes,\n      transition: 'fade',\n      total_duration_seconds: job.audio_duration || 30\n    },\n    output_format: 'mp4',\n    quality: 'high',\n    aspect_ratio: '16:9'\n  }\n};"
+      },
+      "name": "Function: Build Video Generation Request",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1/models/veo-3-1-generate:generateVideo",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "content",
+            "value": "={{ JSON.stringify($input.first().json.video_request) }}"
+          }
+        ]
+      },
+      "name": "HTTP: Call Google Flow (Veo 3.1) - Submit Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1/models/veo-3-1-generate/operations/{{ $input.first().json.operationName }}",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_API_KEY }}"
+            }
+          ]
+        }
+      },
+      "name": "Wait Loop: Poll Video Generation Status (5-10min timeout)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 100],
+      "retryType": "exponentialBackoff",
+      "retryOptions": {
+        "maxAttempts": 60,
+        "delayBase": 5000,
+        "delayMultiplier": 1.1,
+        "timeoutSeconds": 900
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract video URL from completed operation\nconst operation = $input.first().json;\n\nif (operation.state !== 'DONE' || operation.error) {\n  throw new Error(`Video generation failed: ${operation.error?.message || 'Unknown error'}`);\n}\n\nconst videoUrl = operation.response?.video_url;\nif (!videoUrl) {\n  throw new Error('No video_url in response');\n}\n\nreturn {\n  jobId: $input.first().json.jobId,\n  videoUrl: videoUrl,\n  videoDuration: operation.response?.duration_seconds,\n  generatedAt: new Date().toISOString(),\n  status: 'ready_for_upload'\n};"
+      },
+      "name": "Function: Extract Video URL",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1450, 100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/storage/upload-video",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "bucket",
+            "value": "council-videos"
+          },
+          {
+            "name": "jobId",
+            "value": "={{ $input.first().json.jobId }}"
+          },
+          {
+            "name": "videoUrl",
+            "value": "={{ $input.first().json.videoUrl }}"
+          },
+          {
+            "name": "filename",
+            "value": "={{ $input.first().json.jobId }}.mp4"
+          }
+        ]
+      },
+      "name": "HTTP: Download & Upload Video to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1650, 100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/council/{{ $input.first().json.jobId }}/phase2/video",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "httpMethod": "PUT",
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "videoUrl",
+            "value": "={{ $node['HTTP: Download & Upload Video to Supabase'].json.signedUrl }}"
+          }
+        ]
+      },
+      "name": "HTTP: Update Supabase (video_url + fase2_status=complete)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1850, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/notification",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "jobId",
+            "value": "={{ $input.first().json.jobId }}"
+          },
+          {
+            "name": "status",
+            "value": "complete"
+          },
+          {
+            "name": "message",
+            "value": "Video generation complete! Conteúdo multimídia (texto+áudio+imagens+vídeo) pronto."
+          }
+        ]
+      },
+      "name": "Send Notification: Phase 2 Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2050, 100]
+    }
+  ],
+  "connections": {
+    "Webhook: Listen for Video Generation Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Fetch Council Job (audio_url + images_urls)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Fetch Council Job (audio_url + images_urls)": {
+      "main": [
+        [
+          {
+            "node": "Function: Validate Assets Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Validate Assets Ready": {
+      "main": [
+        [
+          {
+            "node": "Function: Build Video Generation Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Build Video Generation Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Call Google Flow (Veo 3.1) - Submit Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Call Google Flow (Veo 3.1) - Submit Job": {
+      "main": [
+        [
+          {
+            "node": "Wait Loop: Poll Video Generation Status (5-10min timeout)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Loop: Poll Video Generation Status (5-10min timeout)": {
+      "main": [
+        [
+          {
+            "node": "Function: Extract Video URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Extract Video URL": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Download & Upload Video to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Download & Upload Video to Supabase": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Update Supabase (video_url + fase2_status=complete)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Update Supabase (video_url + fase2_status=complete)": {
+      "main": [
+        [
+          {
+            "node": "Send Notification: Phase 2 Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "timezone": "America/Sao_Paulo",
+    "saveManualExecutions": true,
+    "executionOrder": "v1"
+  },
+  "tags": [
+    "phase-2",
+    "content-generation",
+    "video-generation",
+    "google-flow",
+    "veo"
+  ]
+}

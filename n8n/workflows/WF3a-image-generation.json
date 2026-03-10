@@ -1,0 +1,249 @@
+{
+  "name": "WF3a: Tema keywords → Google Whisk (Imagen 3) → images",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/webhook/council-phase2-images",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "httpMethod": "POST"
+      },
+      "name": "Webhook: Listen for Image Generation Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 100],
+      "webhookId": "council-images-webhook"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/council/{{ $input.first().json.jobId }}",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        }
+      },
+      "name": "HTTP: Fetch Council Job Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract tema + generate image prompts\nconst job = $input.first().json;\nconst markdown = job.resultado_capitao;\nconst tema = job.tema;\n\n// Extract key concepts from Markdown\nconst keywords = [];\nconst sections = markdown.split('###');\nfor (const section of sections) {\n  const matches = section.match(/\\b[A-Z][a-záéíóú\\w\\s]{5,}\\b/g);\n  if (matches) keywords.push(...matches.slice(0, 3));\n}\n\nconst uniqueKeywords = [...new Set(keywords)].slice(0, 5);\n\n// Create 3-5 distinct image prompts\nconst prompts = [\n  `Tema: ${tema}, estilo artístico moderno, autenticidade de marca, conceitual`,\n  `${tema} visualização: composição dinâmica, cores vibrantes, profundidade, fotorrealismo`,\n  `Conceito ${tema}: minimalista elegante, design clean, tipografia forte, branding`,\n  `${tema} narrativa visual: storytelling, movimento implícito, emoção, impacto visual`,\n  `${tema} inovação: futurista, cores harmônicas, estética premium, diferenciado`\n];\n\nreturn {\n  jobId: job.id,\n  tema: tema,\n  keywords: uniqueKeywords,\n  imagePrompts: prompts.slice(0, 3), // Start with 3, can scale to 5\n  promptCount: 3\n};"
+      },
+      "name": "Function: Extract Keywords + Generate Prompts",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Call Google Whisk API (or Imagen 3 direct)\n// This is a placeholder for browser automation or direct API call\n// In production: use OpenClaw to automate Google Whisk, or call Imagen 3 API directly\n\nconst prompts = $input.first().json.imagePrompts;\nconst jobId = $input.first().json.jobId;\n\n// Simulate API call to Google Whisk\nreturn {\n  jobId: jobId,\n  imageRequests: prompts.map((prompt, idx) => ({\n    prompt_id: `${jobId}-img-${idx}`,\n    prompt: prompt,\n    status: 'pending',\n    model: 'Imagen 3'\n  }))\n};"
+      },
+      "name": "Function: Build Image Generation Requests",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1/models/imagen-3-generate:generateImages",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "prompt",
+            "value": "={{ $input.first().json.imageRequests[0].prompt }}"
+          },
+          {
+            "name": "numberOfImages",
+            "value": "1"
+          },
+          {
+            "name": "safetySettings",
+            "value": "{\n  \"category\": \"HARM_CATEGORY_UNSPECIFIED\",\n  \"threshold\": \"BLOCK_NONE\"\n}"
+          }
+        ]
+      },
+      "name": "HTTP: Call Google Whisk (Imagen 3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process generated images\nconst images = $input.first().json;\nconst jobId = $input.first().json.jobId;\n\nconst imageUrls = images.candidates?.map((img, idx) => ({\n  index: idx,\n  url: img.image_url || img.url,\n  prompt: img.prompt || 'Generated image',\n  metadata: {\n    generated_at: new Date().toISOString(),\n    model: 'Imagen 3'\n  }\n})) || [];\n\nreturn {\n  jobId: jobId,\n  imageCount: imageUrls.length,\n  images: imageUrls\n};"
+      },
+      "name": "Function: Process Generated Images",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1250, 100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/storage/upload-images",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "bucket",
+            "value": "council-images"
+          },
+          {
+            "name": "jobId",
+            "value": "={{ $input.first().json.jobId }}"
+          },
+          {
+            "name": "images",
+            "value": "={{ $input.first().json.images }}"
+          }
+        ]
+      },
+      "name": "HTTP: Upload Images to Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/council/{{ $input.first().json.jobId }}/phase2/images",
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "httpMethod": "PUT",
+        "sendBody": true,
+        "bodyParametersUi": "keyvaluepairs",
+        "bodyParameters": [
+          {
+            "name": "imageUrls",
+            "value": "={{ $node['HTTP: Upload Images to Supabase Storage'].json.uploadedUrls }}"
+          }
+        ]
+      },
+      "name": "HTTP: Update Supabase (images_urls + fase2_status)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1650, 100]
+    }
+  ],
+  "connections": {
+    "Webhook: Listen for Image Generation Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Fetch Council Job Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Fetch Council Job Data": {
+      "main": [
+        [
+          {
+            "node": "Function: Extract Keywords + Generate Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Extract Keywords + Generate Prompts": {
+      "main": [
+        [
+          {
+            "node": "Function: Build Image Generation Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Build Image Generation Requests": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Call Google Whisk (Imagen 3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Call Google Whisk (Imagen 3)": {
+      "main": [
+        [
+          {
+            "node": "Function: Process Generated Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function: Process Generated Images": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Upload Images to Supabase Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Upload Images to Supabase Storage": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Update Supabase (images_urls + fase2_status)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "timezone": "America/Sao_Paulo",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    "phase-2",
+    "content-generation",
+    "image-generation",
+    "google-whisk",
+    "imagen"
+  ]
+}

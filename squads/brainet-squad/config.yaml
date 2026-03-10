@@ -1,0 +1,8 @@
+name: brainet-squad
+description: Squad principal do projeto Brainet
+version: 1.0.0
+roles:
+  - id: dev
+    path: agents/dev.yaml
+  - id: qa
+    path: agents/qa.yaml

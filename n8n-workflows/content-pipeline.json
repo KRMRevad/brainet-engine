@@ -1,0 +1,47 @@
+{
+    "name": "Content Pipeline",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "brainet/pipeline",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook (Trend Detected)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "command": "echo 'Triggering video generation pipeline...'"
+            },
+            "id": "run-pipeline",
+            "name": "Run Content Engine (Mock)",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook (Trend Detected)": {
+            "main": [
+                [
+                    {
+                        "node": "Run Content Engine (Mock)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {}
+}

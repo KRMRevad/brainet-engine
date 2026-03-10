@@ -1,0 +1,664 @@
+{
+    "meta": {
+        "version": "1.0.0",
+        "lastUpdated": "2026-02-20",
+        "totalNichos": 8,
+        "source": "BRAINET / EVAD"
+    },
+    "nichos": [
+        {
+            "id": "espiritualidade",
+            "nome": "Espiritualidade",
+            "emoji": "🕊️",
+            "cor": "#8B5CF6",
+            "corSecundaria": "#6D28D9",
+            "arquetipo": "O Anjo",
+            "vicioCurado": "Orgulho / Medo",
+            "virtudePromovida": "Fé / Humildade",
+            "canalExistente": "321.Arcanjos",
+            "peso": 1,
+            "exploracoes": 42,
+            "subtemas": [
+                {
+                    "id": "anjos-e-arcanjos",
+                    "nome": "Anjos e Arcanjos",
+                    "descricao": "Os mensageiros divinos e suas hierarquias",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Os 7 Arcanjos e suas funções cósmicas — guia definitivo",
+                                "Oração guiada com o Arcanjo Miguel para proteção espiritual",
+                                "Como cada arcanjo governa um dia da semana",
+                                "A hierarquia angelical: de Serafins a Anjos da Guarda",
+                                "Sinais de que um arcanjo está te guiando agora"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "1 frase do Arcanjo Rafael para curar hoje",
+                                "Você sabia que Uriel governa as sextas-feiras?",
+                                "Oração de 30 segundos com São Miguel"
+                            ]
+                        },
+                        {
+                            "id": "carrossel",
+                            "nome": "Carrossel Instagram",
+                            "icone": "📸",
+                            "angulos": [
+                                "7 slides: Cada Arcanjo + sua cor + sua oração",
+                                "5 sinais de que seu anjo da guarda está presente",
+                                "Os cristais de cada arcanjo — guia visual"
+                            ]
+                        },
+                        {
+                            "id": "thread",
+                            "nome": "Thread X/Twitter",
+                            "icone": "🧵",
+                            "angulos": [
+                                "Thread: A verdadeira origem dos 7 Arcanjos nas escrituras",
+                                "Thread: 7 dias, 7 arcanjos, 7 orações"
+                            ]
+                        },
+                        {
+                            "id": "newsletter",
+                            "nome": "Newsletter / Blog",
+                            "icone": "📧",
+                            "angulos": [
+                                "Artigo: O papel dos anjos nas 3 grandes religiões",
+                                "Guia: Como criar seu altar angelical em casa"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "meditacao-e-prece",
+                    "nome": "Meditação e Prece",
+                    "descricao": "Práticas contemplativas para conexão interior",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Meditação guiada: Encontro com seu anjo da guarda",
+                                "A ciência por trás da oração — o que muda no cérebro",
+                                "Terço meditativo dos arcanjos — prática completa"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Respire com o Arcanjo Chamuel — 30 segundos de paz",
+                                "Mantra rápido de proteção espiritual"
+                            ]
+                        },
+                        {
+                            "id": "carrossel",
+                            "nome": "Carrossel Instagram",
+                            "icone": "📸",
+                            "angulos": [
+                                "5 posturas de meditação angelical",
+                                "O passo a passo da oração contemplativa"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "numerologia-sagrada",
+                    "nome": "Numerologia Sagrada",
+                    "descricao": "O significado oculto dos números na vida espiritual",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Números mestres: 11:11, 22:22 e o que significam de verdade",
+                                "A matemática de Deus: Fibonacci na natureza e na alma",
+                                "Seu número de nascimento e a missão da sua vida"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Viu 11:11? O universo está falando com você",
+                                "O que o número 7 significa na Bíblia"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "despertar-consciencial",
+                    "nome": "Despertar Consciencial",
+                    "descricao": "O caminho da expansão de consciência",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Os 5 estágios do despertar espiritual — em qual você está?",
+                                "Sinais de que sua consciência está expandindo",
+                                "A noite escura da alma: como atravessar e renascer"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Se você sente que não pertence a este mundo...",
+                                "3 sinais de despertar espiritual"
+                            ]
+                        },
+                        {
+                            "id": "newsletter",
+                            "nome": "Newsletter / Blog",
+                            "icone": "📧",
+                            "angulos": [
+                                "Ensaio: O despertar não é bonito — é necessário",
+                                "Guia: 30 dias de práticas para expandir consciência"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "saude-e-meio-ambiente",
+            "nome": "Saúde e Meio Ambiente",
+            "emoji": "💧",
+            "cor": "#06B6D4",
+            "corSecundaria": "#0891B2",
+            "arquetipo": "O Alquimista",
+            "vicioCurado": "Avareza / Materialismo",
+            "virtudePromovida": "Prosperidade / Fluxo",
+            "canalExistente": "321.ÁguaLimpa",
+            "peso": 1,
+            "exploracoes": 18,
+            "subtemas": [
+                {
+                    "id": "agua-e-purificacao",
+                    "nome": "Água e Purificação",
+                    "descricao": "A ciência e espiritualidade da água limpa",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "A verdade sobre fluoretação da água — ciência vs. mito",
+                                "Como filtrar água em casa de forma acessível — guia completo",
+                                "Emoto e a memória da água: ciência real ou pseudociência?",
+                                "Crise hídrica global: o que ninguém te conta"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Teste: sua água de torneira é realmente limpa?",
+                                "3 formas baratas de purificar água em casa"
+                            ]
+                        },
+                        {
+                            "id": "carrossel",
+                            "nome": "Carrossel Instagram",
+                            "icone": "📸",
+                            "angulos": [
+                                "Comparativo visual: 5 filtros de água — qual funciona?",
+                                "O caminho da sua água: da nascente à torneira"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "alimentacao-consciente",
+                    "nome": "Alimentação Consciente",
+                    "descricao": "Nutrição como medicina e ato de resistência",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Agrotóxicos no Brasil: o que você come todos os dias",
+                                "Jejum intermitente — a ciência definitiva",
+                                "Alimentos que curam: a farmácia na sua cozinha"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "O veneno no seu prato — 1 dado chocante",
+                                "Erva que substitui remédio: descubra qual"
+                            ]
+                        },
+                        {
+                            "id": "thread",
+                            "nome": "Thread X/Twitter",
+                            "icone": "🧵",
+                            "angulos": [
+                                "Thread: 10 alimentos que a indústria não quer que você conheça"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "sustentabilidade-urbana",
+                    "nome": "Sustentabilidade Urbana",
+                    "descricao": "Viver de forma sustentável na cidade moderna",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Como criar uma horta em apartamento — do zero ao colheita",
+                                "Compostagem urbana: transforme lixo em ouro",
+                                "Economia circular: o futuro já começou na sua cidade"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Composta em 60 segundos — tutorial rápido",
+                                "5 plantas que purificam o ar do seu quarto"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "temperanca",
+            "nome": "Temperança e Nutrição",
+            "emoji": "🍃",
+            "cor": "#10B981",
+            "corSecundaria": "#059669",
+            "arquetipo": "O Nutricionista",
+            "vicioCurado": "Gula",
+            "virtudePromovida": "Temperança",
+            "canalExistente": null,
+            "peso": 2,
+            "exploracoes": 0,
+            "subtemas": [
+                {
+                    "id": "equilibrio-alimentar",
+                    "nome": "Equilíbrio Alimentar",
+                    "descricao": "A arte de comer com consciência e propósito",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "A psicologia da gula: por que comemos mais do que precisamos",
+                                "Dieta do ancestral: como nossos avós comiam e viviam mais",
+                                "Açúcar: o vício mais aceito do mundo"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Teste: quanto açúcar escondido você come por dia?",
+                                "1 hábito japonês para parar de comer demais"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "jejum-e-disciplina",
+                    "nome": "Jejum e Disciplina Corporal",
+                    "descricao": "O poder da abstinência consciente",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Jejum nas religiões: prática universal de transcendência",
+                                "Autofagia: como o corpo se cura quando você para de comer",
+                                "Disciplina do corpo como portal para a mente"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "paciencia",
+            "nome": "Paciência e Paz Interior",
+            "emoji": "☯️",
+            "cor": "#F59E0B",
+            "corSecundaria": "#D97706",
+            "arquetipo": "O Zen",
+            "vicioCurado": "Ira",
+            "virtudePromovida": "Paciência",
+            "canalExistente": null,
+            "peso": 2,
+            "exploracoes": 0,
+            "subtemas": [
+                {
+                    "id": "controle-da-ira",
+                    "nome": "Controle da Ira",
+                    "descricao": "Transformar raiva em sabedoria",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "A neurociência da raiva — o que acontece no seu cérebro",
+                                "Estoicismo prático: Marcus Aurelius contra a ira moderna",
+                                "Técnicas de desescalada: 5 formas de acalmar em 2 minutos"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Quando sentir raiva, faça ISTO — 10 segundos",
+                                "Frase de Marco Aurélio que muda tudo"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "filosofia-zen",
+                    "nome": "Filosofia Zen",
+                    "descricao": "Sabedoria oriental para o caos ocidental",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Wabi-sabi: a beleza da imperfeição",
+                                "O monge que vendeu sua Ferrari — lições reais",
+                                "Zen e produtividade: menos é exponencialmente mais"
+                            ]
+                        },
+                        {
+                            "id": "carrossel",
+                            "nome": "Carrossel Instagram",
+                            "icone": "📸",
+                            "angulos": [
+                                "10 provérbios Zen para o dia a dia",
+                                "Antes e depois: vida com e sem mindfulness"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "tecnologia-consciente",
+            "nome": "Tecnologia Consciente",
+            "emoji": "🤖",
+            "cor": "#3B82F6",
+            "corSecundaria": "#2563EB",
+            "arquetipo": "O Hacker Ético",
+            "vicioCurado": "Dependência Digital",
+            "virtudePromovida": "Soberania Tecnológica",
+            "canalExistente": null,
+            "peso": 3,
+            "exploracoes": 0,
+            "subtemas": [
+                {
+                    "id": "ia-e-consciencia",
+                    "nome": "IA e Consciência",
+                    "descricao": "O impacto da inteligência artificial na humanidade",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "IA vai substituir você? A verdade que ninguém conta",
+                                "Como usar IA para criar, não para destruir",
+                                "O dilema ético da IA: quem decide o que é certo?"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Esta imagem foi feita por IA — você consegue dizer?",
+                                "O emprego que IA NÃO vai substituir"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "privacidade-digital",
+                    "nome": "Privacidade e Soberania Digital",
+                    "descricao": "Proteção de dados e liberdade na era digital",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Seu celular te espiona — e você deixou isso acontecer",
+                                "De-Google: como sair da Matrix tecnológica",
+                                "VPN, Tor, Linux: o kit de sobrevivência digital"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "filosofia-e-psicologia",
+            "nome": "Filosofia e Psicologia",
+            "emoji": "🧠",
+            "cor": "#EC4899",
+            "corSecundaria": "#DB2777",
+            "arquetipo": "O Filósofo",
+            "vicioCurado": "Ignorância",
+            "virtudePromovida": "Sabedoria",
+            "canalExistente": null,
+            "peso": 3,
+            "exploracoes": 0,
+            "subtemas": [
+                {
+                    "id": "estoicismo",
+                    "nome": "Estoicismo Moderno",
+                    "descricao": "Filosofia antiga para problemas modernos",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Memento Mori: por que pensar na morte te faz viver melhor",
+                                "Epicteto era escravo — e a pessoa mais livre do mundo",
+                                "A manhã de um estoico: rotina de 2000 anos que funciona"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Sêneca em 30 segundos: a frase mais poderosa",
+                                "O paradoxo estoico da felicidade"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "psicologia-profunda",
+                    "nome": "Psicologia Profunda",
+                    "descricao": "Jung, sombra, individuação e o inconsciente coletivo",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "A Sombra de Jung: o monstro que você ignora",
+                                "Individuação: a jornada mais importante da vida",
+                                "Arquétipos no cinema: por que certas histórias nos hipnotizam"
+                            ]
+                        },
+                        {
+                            "id": "newsletter",
+                            "nome": "Newsletter / Blog",
+                            "icone": "📧",
+                            "angulos": [
+                                "Ensaio: O que seus sonhos realmente significam",
+                                "Guia: Como iniciar um diário de sombras"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "financas-conscientes",
+            "nome": "Finanças Conscientes",
+            "emoji": "💰",
+            "cor": "#EF4444",
+            "corSecundaria": "#DC2626",
+            "arquetipo": "O Construtor",
+            "vicioCurado": "Consumismo",
+            "virtudePromovida": "Abundância Consciente",
+            "canalExistente": null,
+            "peso": 3,
+            "exploracoes": 0,
+            "subtemas": [
+                {
+                    "id": "liberdade-financeira",
+                    "nome": "Liberdade Financeira",
+                    "descricao": "O caminho real para independência financeira",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "FIRE no Brasil: aposentar com 35 anos é possível?",
+                                "A regra dos 4%: a matemática da liberdade",
+                                "Renda passiva real vs. golpes na internet"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "Se você ganha R$3000, invista ISTO por mês",
+                                "A diferença entre rico e livre"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "empreendedorismo-digital",
+                    "nome": "Empreendedorismo Digital",
+                    "descricao": "Criar negócios éticos na era digital",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Como criar um canal lucrativo do zero — sem aparecer",
+                                "A economia de criadores: como funciona de verdade",
+                                "Do conteúdo ao produto: a escada de monetização"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "artes-e-criatividade",
+            "nome": "Artes e Criatividade",
+            "emoji": "🎨",
+            "cor": "#F97316",
+            "corSecundaria": "#EA580C",
+            "arquetipo": "O Artista",
+            "vicioCurado": "Apatia / Preguiça",
+            "virtudePromovida": "Expressão Criativa",
+            "canalExistente": null,
+            "peso": 3,
+            "exploracoes": 0,
+            "subtemas": [
+                {
+                    "id": "storytelling",
+                    "nome": "Storytelling e Narrativa",
+                    "descricao": "A arte milenar de contar histórias com propósito",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "A Jornada do Herói: por que toda boa história segue o mesmo padrão",
+                                "Como roteiristas da Netflix prendem sua atenção",
+                                "Storytelling para marcas: a arma secreta do marketing"
+                            ]
+                        },
+                        {
+                            "id": "shorts",
+                            "nome": "Shorts (< 60s)",
+                            "icone": "⚡",
+                            "angulos": [
+                                "A técnica de roteiro em 1 slide",
+                                "Por que você NÃO CONSEGUE parar de assistir"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "arte-generativa",
+                    "nome": "Arte Generativa e IA",
+                    "descricao": "Criando arte com inteligência artificial",
+                    "formatos": [
+                        {
+                            "id": "longform-video",
+                            "nome": "Vídeo Longo (12+ min)",
+                            "icone": "🎬",
+                            "angulos": [
+                                "Criando arte cinematográfica com IA — tutorial completo",
+                                "IA é arte? O debate que divide o mundo",
+                                "De prompt a obra-prima: o workflow do artista digital"
+                            ]
+                        },
+                        {
+                            "id": "carrossel",
+                            "nome": "Carrossel Instagram",
+                            "icone": "📸",
+                            "angulos": [
+                                "Antes/depois: prompt vs. imagem final — 10 exemplos",
+                                "5 estilos de arte IA que explodiram em 2026"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

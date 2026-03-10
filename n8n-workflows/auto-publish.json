@@ -1,0 +1,47 @@
+{
+    "name": "Auto Publish",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "brainet/publish",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook (Video Ready)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "command": "echo 'Uploading to platforms...'"
+            },
+            "id": "upload-video",
+            "name": "Upload to SNS (Mock)",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook (Video Ready)": {
+            "main": [
+                [
+                    {
+                        "node": "Upload to SNS (Mock)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {}
+}

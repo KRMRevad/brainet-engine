@@ -1,0 +1,155 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://brainet.dev/schemas/council-input.json",
+    "title": "BRAINET Council Input",
+    "description": "Schema de entrada para o Conselho BRAINET — orquestração de 4 agentes LLM",
+    "type": "object",
+    "required": [
+        "tema",
+        "objetivo"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID único do job (gerado automaticamente se omitido)"
+        },
+        "tema": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500,
+            "description": "Tema principal da pesquisa/tarefa"
+        },
+        "contexto": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Background, situação atual, informações prévias relevantes"
+        },
+        "objetivo": {
+            "type": "string",
+            "enum": [
+                "pesquisa",
+                "sintese",
+                "estrategia",
+                "analise",
+                "comparacao",
+                "criacao",
+                "revisao"
+            ],
+            "description": "Tipo de output esperado — define routing no Council"
+        },
+        "profundidade": {
+            "type": "string",
+            "enum": [
+                "rapida",
+                "padrao",
+                "profunda"
+            ],
+            "default": "padrao",
+            "description": "Nível de profundidade da análise"
+        },
+        "fontes": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "format": "uri"
+            },
+            "maxItems": 20,
+            "default": [],
+            "description": "URLs de referência que o Pesquisador deve priorizar"
+        },
+        "restricoes": {
+            "type": "object",
+            "properties": {
+                "idioma": {
+                    "type": "string",
+                    "default": "pt-BR"
+                },
+                "formato_output": {
+                    "type": "string",
+                    "enum": [
+                        "markdown",
+                        "json",
+                        "html",
+                        "pdf"
+                    ],
+                    "default": "markdown"
+                },
+                "max_tokens": {
+                    "type": "integer",
+                    "minimum": 500,
+                    "maximum": 32000,
+                    "default": 8000
+                },
+                "tom": {
+                    "type": "string",
+                    "enum": [
+                        "formal",
+                        "tecnico",
+                        "casual",
+                        "executivo"
+                    ],
+                    "default": "tecnico"
+                }
+            },
+            "additionalProperties": false
+        },
+        "metadados": {
+            "type": "object",
+            "properties": {
+                "usuario_id": {
+                    "type": "string"
+                },
+                "sessao_id": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "prioridade": {
+                    "type": "string",
+                    "enum": [
+                        "baixa",
+                        "normal",
+                        "alta",
+                        "urgente"
+                    ],
+                    "default": "normal"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "maxItems": 10
+                },
+                "callback_url": {
+                    "type": "string",
+                    "format": "uri"
+                }
+            },
+            "additionalProperties": false
+        },
+        "council_config": {
+            "type": "object",
+            "properties": {
+                "modo": {
+                    "type": "string",
+                    "enum": [
+                        "completo",
+                        "rapido",
+                        "apenas_pesquisa"
+                    ],
+                    "default": "completo"
+                },
+                "desafiar": {
+                    "type": "boolean",
+                    "default": true
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}

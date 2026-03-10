@@ -1,0 +1,47 @@
+# Routing weights — Define pesos de cada agente por tipo de objetivo
+# Pesos controlam alocação de atenção e tokens
+# No modo "completo": todos executam em paralelo, pesos afetam síntese do Capitão
+
+# Escala: 0.5 (baixo) → 1 (normal) → 3 (alto prioridade)
+
+pesquisa:
+  pesquisador: 3.0
+  visionario: 1.0
+  desafiador: 1.0
+  capitao_foco: "Priorize dados e citações do Pesquisador"
+
+sintese:
+  pesquisador: 2.0
+  visionario: 1.5
+  desafiador: 1.0
+  capitao_foco: "Integre todas as perspectivas de forma equilibrada"
+
+estrategia:
+  pesquisador: 1.0
+  visionario: 3.0
+  desafiador: 2.0
+  capitao_foco: "Priorize visão do Visionário mas valide com riscos do Desafiador"
+
+analise:
+  pesquisador: 2.0
+  visionario: 1.0
+  desafiador: 2.0
+  capitao_foco: "Análise rigorosa com dados + crítica"
+
+comparacao:
+  pesquisador: 2.5
+  visionario: 1.0
+  desafiador: 2.5
+  capitao_foco: "Compare opções com dados (Pesq) e riscos (Desaf)"
+
+criacao:
+  pesquisador: 1.0
+  visionario: 3.0
+  desafiador: 0.5
+  capitao_foco: "Maximize criatividade, minimize restrições"
+
+revisao:
+  pesquisador: 1.5
+  visionario: 0.5
+  desafiador: 3.0
+  capitao_foco: "Foco em identificar problemas e melhorias (Desafiador lidera)"

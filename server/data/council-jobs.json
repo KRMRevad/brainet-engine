@@ -1,0 +1,320 @@
+[
+  {
+    "id": "28630a51-9def-4099-9cfa-85bb3d4d35e7",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [
+      "https://example.com/ai-trends",
+      "https://example.com/br-market-2026"
+    ],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772153179023",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "queued",
+    "created_at": "2026-02-27T00:46:19.027Z"
+  },
+  {
+    "id": "da0f2590-93aa-4764-b7c2-e320a3f75fa3",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772153381788",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "queued",
+    "created_at": "2026-02-27T00:49:41.792Z"
+  },
+  {
+    "id": "7a7faa32-c1c4-4ae5-92c0-aab172e9440a",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772155583061",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "complete",
+    "created_at": "2026-02-27T01:26:23.065Z",
+    "updated_at": "2026-02-27T01:26:23.168Z",
+    "resultado_pesquisador": {
+      "error": "All execution methods failed for pesquisador",
+      "source": "none"
+    },
+    "resultado_visionario": {
+      "error": "All execution methods failed for visionario",
+      "source": "none"
+    },
+    "resultado_desafiador": {
+      "error": "All execution methods failed for desafiador",
+      "source": "none"
+    },
+    "resultado_capitao": {
+      "error": "All execution methods failed for capitao",
+      "source": "none"
+    },
+    "resultado_final": "No result produced",
+    "duration_ms": 103,
+    "tokens_used": {},
+    "completed_at": "2026-02-27T01:26:23.168Z"
+  },
+  {
+    "id": "235a8987-c319-48f7-8e23-174868f056f2",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772155941776",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "complete",
+    "created_at": "2026-02-27T01:32:21.777Z",
+    "updated_at": "2026-02-27T01:32:21.892Z",
+    "resultado_pesquisador": {
+      "error": "All execution methods failed for pesquisador",
+      "source": "none"
+    },
+    "resultado_visionario": {
+      "error": "All execution methods failed for visionario",
+      "source": "none"
+    },
+    "resultado_desafiador": {
+      "error": "All execution methods failed for desafiador",
+      "source": "none"
+    },
+    "resultado_capitao": {
+      "error": "All execution methods failed for capitao",
+      "source": "none"
+    },
+    "resultado_final": "No result produced",
+    "duration_ms": 114,
+    "tokens_used": {},
+    "completed_at": "2026-02-27T01:32:21.892Z"
+  },
+  {
+    "id": "c7913b9d-922c-41ee-b988-0c22a7297b68",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772155968566",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "complete",
+    "created_at": "2026-02-27T01:32:48.569Z",
+    "updated_at": "2026-02-27T01:32:48.655Z",
+    "resultado_pesquisador": {
+      "error": "All execution methods failed for pesquisador",
+      "source": "none"
+    },
+    "resultado_visionario": {
+      "error": "All execution methods failed for visionario",
+      "source": "none"
+    },
+    "resultado_desafiador": {
+      "error": "All execution methods failed for desafiador",
+      "source": "none"
+    },
+    "resultado_capitao": {
+      "error": "All execution methods failed for capitao",
+      "source": "none"
+    },
+    "resultado_final": "No result produced",
+    "duration_ms": 86,
+    "tokens_used": {},
+    "completed_at": "2026-02-27T01:32:48.655Z"
+  },
+  {
+    "id": "0d59d7f7-65b3-4780-9064-d82ab9d735c8",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772155994273",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "complete",
+    "created_at": "2026-02-27T01:33:14.276Z",
+    "updated_at": "2026-02-27T01:33:14.349Z",
+    "resultado_pesquisador": {
+      "error": "All execution methods failed for pesquisador",
+      "source": "none"
+    },
+    "resultado_visionario": {
+      "error": "All execution methods failed for visionario",
+      "source": "none"
+    },
+    "resultado_desafiador": {
+      "error": "All execution methods failed for desafiador",
+      "source": "none"
+    },
+    "resultado_capitao": {
+      "error": "All execution methods failed for capitao",
+      "source": "none"
+    },
+    "resultado_final": "No result produced",
+    "duration_ms": 71,
+    "tokens_used": {},
+    "completed_at": "2026-02-27T01:33:14.349Z"
+  },
+  {
+    "id": "67447604-629d-424a-8073-08cc66e10a92",
+    "tema": "Impacto da IA no mercado imobiliário brasileiro",
+    "contexto": "Incorporadora em SP quer usar IA para precificação e atendimento 24/7",
+    "objetivo": "pesquisa",
+    "profundidade": "profunda",
+    "fontes": [],
+    "restricoes": {
+      "idioma": "pt-BR",
+      "formato_output": "markdown",
+      "max_tokens": 8000,
+      "tom": "executivo"
+    },
+    "metadados": {
+      "usuario_id": "test-user-phase1",
+      "sessao_id": "test-session-1772156651221",
+      "prioridade": "alta",
+      "tags": [
+        "ia",
+        "imobiliario",
+        "e2e-test"
+      ]
+    },
+    "council_config": {
+      "modo": "completo",
+      "desafiar": true
+    },
+    "status": "complete",
+    "created_at": "2026-02-27T01:44:11.225Z",
+    "updated_at": "2026-02-27T01:44:11.320Z",
+    "resultado_pesquisador": {
+      "error": "All execution methods failed for pesquisador",
+      "source": "none"
+    },
+    "resultado_visionario": {
+      "error": "All execution methods failed for visionario",
+      "source": "none"
+    },
+    "resultado_desafiador": {
+      "error": "All execution methods failed for desafiador",
+      "source": "none"
+    },
+    "resultado_capitao": {
+      "error": "All execution methods failed for capitao",
+      "source": "none"
+    },
+    "resultado_final": "No result produced",
+    "duration_ms": 93,
+    "tokens_used": {},
+    "completed_at": "2026-02-27T01:44:11.320Z"
+  }
+]

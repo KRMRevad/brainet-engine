@@ -7,19 +7,41 @@
     "dev": "vite --port 5173 --strictPort",
     "server": "node server/server.js",
     "start": "concurrently \"npm run dev\" \"npm run server\"",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "start:pm2:dev": "pm2 start ecosystem.config.js --env development",
+    "stop:pm2": "pm2 stop brainet-server",
+    "restart:pm2": "pm2 restart brainet-server",
+    "logs:pm2": "pm2 logs brainet-server",
     "chrome": "open -n -a 'Google Chrome' --args --remote-debugging-port=9225 --user-data-dir=\"$HOME/.brainet-chrome\"",
+    "chrome:debug": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9225 --user-data-dir=/tmp/chrome-debug-profile --new-window &",
+    "infra:check": "bash infra-check.sh",
+    "lint": "eslint src/ server/",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/ui": "^4.0.18",
+    "concurrently": "^9.0.0",
+    "eslint": "^10.0.2",
+    "happy-dom": "^20.7.0",
     "vite": "^6.0.0",
-    "concurrently": "^9.0.0"
+    "vitest": "^4.0.18"
   },
   "dependencies": {
-    "vis-network": "^9.1.9",
-    "vis-data": "^7.1.9",
-    "express": "^4.21.0",
+    "@supabase/supabase-js": "^2.97.0",
+    "@tailwindcss/vite": "^4.2.1",
     "cors": "^2.8.5",
-    "puppeteer-core": "^24.0.0"
+    "dotenv": "^17.3.1",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "puppeteer-core": "^24.0.0",
+    "tailwindcss": "^4.2.1",
+    "vis-data": "^7.1.9",
+    "vis-network": "^9.1.9"
   }
 }

@@ -47,10 +47,10 @@ export default {
         maxQueriesPerPillar: 5,
     },
 
-    // Workspace paths
-    workspace: '/Volumes/Seagate 500/Obsidian Vault/EVAD/1 BRAINET ',
+    // Workspace paths (must be set via environment variable)
+    workspace: process.env.WORKSPACE_PATH,
     agents: {
-        promptDir: 'templates/estrutural/0 Workflow e Agentes',
+        promptDir: process.env.PROMPTS_PATH || './server/prompts',
         promptFiles: {
             1: '1_PESQUISA_PROFUNDA_V2.md',
             2: '2_EXTRACAO_CONHECIMENTO_V2.md',
@@ -72,9 +72,8 @@ export default {
         heavyAgents: [1, 2, 3, 6],
     },
 
-    // Job queue
+    // Job queue (Supabase-only, no JSON fallback)
     jobs: {
-        dbPath: path.join(__dirname, 'data', 'jobs.json'),
         outputDir: 'execution/pipeline-outputs',
     },
 
@@ -97,6 +96,36 @@ export default {
             5: { mode: 'solo', lead: 'chatgpt' },
             6: { mode: 'cascade', order: ['claude', 'chatgpt', 'gemini'] },
             qa_fire: { mode: 'council', mergeMode: 'select_best' },
+        },
+    },
+
+    // LLM Resolver — Smart tiered routing
+    resolver: {
+        // Tier 2: Local Ollama (Mac)
+        local: {
+            url: process.env.OLLAMA_URL || 'http://localhost:11434',
+            model: process.env.LOCAL_MODEL || null, // auto-detect from available
+        },
+
+        // Tier 3: Remote Ollama (Alienware via Tailscale)
+        remote: {
+            enabled: !!process.env.REMOTE_OLLAMA_URL,
+            url: process.env.REMOTE_OLLAMA_URL || null,
+            model: process.env.REMOTE_MODEL || null,
+        },
+
+        // Tier 6: GLM5 via Modal
+        glm5: {
+            url: process.env.GLM5_URL || null,
+        },
+
+        // Agent → minimum tier mapping
+        agentTiers: {
+            1: { minTier: 'browser' },  // Research agents need strong reasoning
+            2: { minTier: 'browser' },  // Knowledge extraction
+            3: { minTier: 'browser' },  // Matrix building
+            5: { minTier: 'local' },    // Strategy can use local LLM
+            6: { minTier: 'browser' },  // Script generation needs quality
         },
     },
 }

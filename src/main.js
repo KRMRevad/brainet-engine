@@ -11,6 +11,7 @@ import { renderChannelSpawner } from './views/channel-spawner.js'
 import { renderPipeline } from './views/pipeline.js'
 import { renderStats } from './views/stats.js'
 import { renderJobs } from './views/jobs.js'
+import { renderSquadMonitor } from './views/squad-monitor.js'
 import { initParticles } from './components/particles.js'
 
 // --- ROUTER ---
@@ -21,6 +22,7 @@ const views = {
     'channel-spawner': { render: renderChannelSpawner, el: 'view-channel-spawner' },
     pipeline: { render: renderPipeline, el: 'view-pipeline' },
     stats: { render: renderStats, el: 'view-stats' },
+    'squad-monitor': { render: renderSquadMonitor, el: 'view-squad-monitor' },
     jobs: { render: renderJobs, el: 'view-jobs' },
 }
 
@@ -69,8 +71,8 @@ function init() {
     initParticles()
 }
 
-function updateNavStats() {
-    const stats = getTaxonomyStats()
+async function updateNavStats() {
+    const stats = await getTaxonomyStats()
     const el = document.getElementById('nav-stats')
     el.innerHTML = `${stats.nichos} nichos · ${stats.angulos} ângulos · ${stats.explorations} rolls`
 }

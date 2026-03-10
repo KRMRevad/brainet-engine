@@ -335,10 +335,10 @@ export async function checkCouncilHealth() {
             totalAvailable: Object.values(ais.ais).filter(a => a.available).length,
         }
     } catch (e) {
+        // SYS-23: Do NOT expose Chrome path or debugging port in public response
         return {
             connected: false,
-            error: e.message,
-            help: 'Start Chrome with: /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222',
+            error: 'Chrome connection failed',
         }
     }
 }
